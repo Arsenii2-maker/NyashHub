@@ -1,0 +1,114 @@
+:root {
+    --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none; /* Блокировка зума */
+}
+
+body, html {
+    width: 100%; height: 100%;
+    overflow: hidden; position: fixed;
+    font-family: 'Comfortaa', sans-serif;
+}
+
+/* ТЕМЫ */
+body.theme-cherry-blossom { --bg: #fff0f3; --accent: #ffb7c5; --text: #5f4b4b; --glass: rgba(255, 255, 255, 0.4); }
+body.theme-midnight-galaxy { --bg: #0b0b1a; --accent: #e94560; --text: #ffffff; --glass: rgba(20, 20, 50, 0.6); }
+/* Добавь остальные 10 тем по аналогии */
+
+.hub-wrapper {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    display: flex; flex-direction: column;
+    transition: background var(--transition);
+}
+
+.ambient-overlay {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, var(--accent) 0%, transparent 80%);
+    opacity: 0.2; pointer-events: none;
+}
+
+/* ШАПКА */
+.hub-header {
+    padding: 50px 20px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    z-index: 10;
+}
+
+.glass {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+}
+
+.hub-avatar {
+    width: 50px; height: 50px; background: white;
+    border-radius: 15px; display: flex; align-items: center;
+    justify-content: center; font-size: 24px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+/* ГЛАВНАЯ СЦЕНА */
+.scene-master {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 40px;
+}
+
+.pet-entity {
+    font-size: 100px;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));
+    animation: floating 3s infinite ease-in-out;
+    cursor: pointer;
+}
+
+.module-grid {
+    display: flex; gap: 15px; width: 90%; max-width: 400px;
+}
+
+.module-card {
+    flex: 1; padding: 20px 10px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 10px; cursor: pointer; transition: var(--transition);
+}
+
+.module-card:active { transform: scale(0.9); }
+.module-card i { font-size: 24px; color: var(--accent); }
+.module-card span { font-size: 10px; font-weight: bold; text-transform: uppercase; }
+
+/* МОДАЛКИ */
+.modal-root {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+}
+
+.modal-view {
+    width: 85%; max-width: 380px;
+    padding: 25px; border-radius: 30px;
+    transform: scale(1); animation: pop 0.3s ease-out;
+}
+
+@keyframes floating {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+@keyframes pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.hidden { display: none !important; }
