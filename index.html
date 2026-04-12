@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NyashHub | Personal Space</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Montserrat:wght@300;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-cherry-blossom font-rounded">
+
+    <div id="nyash-hub-root" class="hub-wrapper">
+        <div class="ambient-overlay"></div>
+        <div class="vignette"></div>
+
+        <header class="hub-header glass">
+            <div class="user-profile">
+                <div class="hub-avatar" onclick="NyashPet.jump()">🤖</div>
+                <div class="user-stats">
+                    <h1 id="username-display">Nyashka</h1>
+                    <div class="currency-badge">🍬 <span id="candy-count">0</span></div>
+                </div>
+            </div>
+            <div class="hub-controls">
+                <button class="icon-btn" onclick="UI.openModal('settings')"><i class="fas fa-sliders-h"></i></button>
+            </div>
+        </header>
+
+        <main class="scene-master">
+            <div class="main-pet-container" onclick="NyashPet.interact()">
+                <div id="pet-aura" class="aura"></div>
+                <div id="pet-main" class="pet-entity">🐱</div>
+                <div class="pet-name-tag">NyashBot</div>
+            </div>
+
+            <nav class="module-grid">
+                <div class="module-card glass" onclick="UI.openModal('oracle')">
+                    <i class="fas fa-crystal-ball"></i>
+                    <span>Оракул</span>
+                </div>
+                <div class="module-card glass" onclick="UI.openModal('diary')">
+                    <i class="fas fa-book-heart"></i>
+                    <span>Дневник</span>
+                </div>
+                <div class="module-card glass disabled">
+                    <i class="fas fa-couch"></i>
+                    <span>Комната</span>
+                </div>
+            </nav>
+        </main>
+
+        <div id="modal-container" class="modal-root hidden" onclick="UI.handleOverlayClick(event)">
+            
+            <div id="view-oracle" class="modal-view hidden glass-heavy">
+                <div class="view-header">
+                    <h2>🔮 NyashOracle</h2>
+                    <button class="close-btn" onclick="UI.closeModal()">×</button>
+                </div>
+                <div class="oracle-content">
+                    <p id="oracle-response">Коснись шара, чтобы узнать судьбу...</p>
+                    <div class="magic-sphere" onclick="NyashOracle.generate()">✨</div>
+                </div>
+            </div>
+
+            <div id="view-diary" class="modal-view hidden glass-heavy">
+                <div class="view-header">
+                    <h2>📔 NyashDiary</h2>
+                    <button class="close-btn" onclick="UI.closeModal()">×</button>
+                </div>
+                <div class="diary-body">
+                    <textarea id="diary-input" placeholder="Как прошел день?"></textarea>
+                    <div class="diary-actions">
+                        <button class="main-btn" onclick="NyashDiary.save()">Сохранить</button>
+                    </div>
+                    <div id="diary-history" class="history-list"></div>
+                </div>
+            </div>
+
+            <div id="view-settings" class="modal-view hidden glass-heavy">
+                <div class="view-header">
+                    <h2>⚙️ Настройки Hub</h2>
+                    <button class="close-btn" onclick="UI.closeModal()">×</button>
+                </div>
+                <div class="settings-body">
+                    <label>Атмосфера</label>
+                    <div id="theme-picker" class="picker-grid"></div>
+                    <label>Шрифт</label>
+                    <select id="font-picker" onchange="UI.setFont(this.value)"></select>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
