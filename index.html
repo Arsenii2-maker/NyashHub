@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NyashHub - Final Build</title>
+    <title>NyashHub</title>
     <style>
         /* БАЗА И СЛОИ */
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -79,289 +79,288 @@
         </div>
     </div>
 
-    <script>
-        // Безопасная загрузка данных из кэша
-        function safeLoad(key, fallback) {
-            try {
-                const data = localStorage.getItem(key);
-                return data ? JSON.parse(data) : fallback;
-            } catch (e) {
-                return fallback;
+<script>
+    const game = {
+        candies: parseInt(localStorage.getItem('nhub_candies')) || 0,
+        pet: localStorage.getItem('nhub_pet') || '🤖',
+        inventory: JSON.parse(localStorage.getItem('nhub_inv')) || [],
+        theme: localStorage.getItem('nhub_theme') || 'theme-pink',
+        
+        // Новые переменные для сохранения прогресса
+        diary: JSON.parse(localStorage.getItem('nhub_diary')) || {},
+        currentDiaryDate: new Date().toLocaleDateString('ru-RU'),
+        plantLevel: parseInt(localStorage.getItem('nhub_plant')) || 0,
+        partyActive: false,
+        clickPower: 1, // Множитель клика (меняется во время Party)
+        
+        shopItems: {
+            'wardrobe': { name: 'Шкаф', price: 10, emoji: '👗', top: '20%', left: '10%', action: () => game.openSettings() },
+            'diary': { name: 'Дневник', price: 20, emoji: '📔', top: '60%', left: '15%', action: () => game.openDiary() },
+            'oracle': { name: 'Оракул', price: 40, emoji: '🔮', top: '25%', left: '75%', action: () => game.askOracle() },
+            'pc': { name: 'ПК', price: 50, emoji: '🖥️', top: '50%', left: '70%', action: () => alert('💻 Мини-игра загружается... (Скоро!)') },
+            'bed': { name: 'Кровать', price: 15, emoji: '🛏️', top: '55%', left: '10%', action: () => alert('Питомец спит... Zzz... 🌙') },
+            'lamp': { name: 'Лампа', price: 10, emoji: '💡', top: '45%', left: '25%', action: () => game.startParty() },
+            'plant': { name: 'Цветок', price: 5, emoji: '🪴', top: '65%', left: '80%', action: () => game.waterPlant() }
+        },
+
+        petList: ['🤖', '🐱', '🐶', '🐹', '🐰', '🦊', '🦄', '🐲', '👽', '👻'],
+        
+        predictions: [
+            "Сегодня будет очень няшный день! ✨",
+            "Твой код скомпилируется с первого раза! 💻",
+            "Пора съесть реальную конфетку! 🍬",
+            "Твой проект станет хитом! 🚀"
+        ],
+
+        init() {
+            // Гарантируем, что запись на сегодня существует
+            if (!this.diary[this.currentDiaryDate]) {
+                this.diary[this.currentDiaryDate] = "";
             }
-        }
+            this.updateUI();
+            this.renderFurniture();
+            this.applyTheme(this.theme);
+        },
 
-        const game = {
-            candies: parseInt(localStorage.getItem('nhub_candies')) || 0,
-            pet: localStorage.getItem('nhub_pet') || '🤖',
-            inventory: safeLoad('nhub_inv', []),
-            theme: localStorage.getItem('nhub_theme') || 'theme-pink',
-            
-            diary: safeLoad('nhub_diary', {}),
-            currentDiaryDate: new Date().toLocaleDateString('ru-RU'),
-            plantLevel: parseInt(localStorage.getItem('nhub_plant')) || 0,
-            partyActive: false,
-            clickPower: 1,
-            
-            shopItems: {
-                'wardrobe': { name: 'Шкаф', price: 10, emoji: '👗', top: '20%', left: '10%', action: () => game.openSettings() },
-                'diary': { name: 'Дневник', price: 20, emoji: '📔', top: '60%', left: '15%', action: () => game.openDiary() },
-                'oracle': { name: 'Оракул', price: 40, emoji: '🔮', top: '25%', left: '75%', action: () => game.askOracle() },
-                'pc': { name: 'ПК', price: 50, emoji: '🖥️', top: '50%', left: '70%', action: () => alert('💻 Мини-игра загружается... (Скоро!)') },
-                'bed': { name: 'Кровать', price: 15, emoji: '🛏️', top: '55%', left: '10%', action: () => alert('Питомец спит... Zzz... 🌙') },
-                'lamp': { name: 'Лампа', price: 10, emoji: '💡', top: '45%', left: '25%', action: () => game.startParty() },
-                'plant': { name: 'Цветок', price: 5, emoji: '🪴', top: '65%', left: '80%', action: () => game.waterPlant() }
-            },
+        // --- ОБНОВЛЕННЫЙ КЛИК С МНОЖИТЕЛЕМ ---
+        clickPet() {
+            this.candies += this.clickPower;
+            this.updateUI();
+            this.showFloatingText(`+${this.clickPower} 🍬`);
+        },
 
-            petList: ['🤖', '🐱', '🐶', '🐹', '🐰', '🦊', '🦄', '🐲', '👽', '👻'],
-            
-            predictions: [
-                "Сегодня будет очень няшный день! ✨",
-                "Твой код скомпилируется с первого раза! 💻",
-                "Пора съесть реальную конфетку! 🍬",
-                "Твой проект станет хитом! 🚀",
-                "Очисти кэш и баги уйдут! 🧹"
-            ],
+        updateUI() {
+            document.getElementById('candy-count').innerText = this.candies;
+            document.getElementById('pet').innerText = this.pet;
+            localStorage.setItem('nhub_candies', this.candies);
+            localStorage.setItem('nhub_pet', this.pet);
+            localStorage.setItem('nhub_inv', JSON.stringify(this.inventory));
+            localStorage.setItem('nhub_theme', this.theme);
+            localStorage.setItem('nhub_diary', JSON.stringify(this.diary));
+            localStorage.setItem('nhub_plant', this.plantLevel);
+        },
 
-            init() {
-                if (!this.diary[this.currentDiaryDate]) {
-                    this.diary[this.currentDiaryDate] = "";
+        renderFurniture() {
+            const layer = document.getElementById('furniture-layer');
+            layer.innerHTML = '';
+            
+            // Если цветок вырос, меняем эмодзи перед отрисовкой
+            if (this.plantLevel >= 5 && this.shopItems['plant']) {
+                this.shopItems['plant'].emoji = '🌳';
+                this.shopItems['plant'].name = 'Дерево';
+            }
+
+            this.inventory.forEach(id => {
+                const item = this.shopItems[id];
+                if(item) {
+                    const div = document.createElement('div');
+                    div.className = 'placed-item';
+                    div.style.top = item.top;
+                    div.style.left = item.left;
+                    div.style.cursor = 'pointer';
+                    div.innerHTML = `${item.emoji}<span>${item.name}</span>`;
+                    div.onclick = (e) => { e.stopPropagation(); item.action(); };
+                    layer.appendChild(div);
                 }
+            });
+        },
+
+        // --- НОВАЯ ЛОГИКА ПРЕДМЕТОВ ---
+
+        // 1. ДНЕВНИК С ДАТАМИ
+        openDiary() {
+            document.getElementById('modal-title').innerText = "Мой Дневник";
+            
+            let dateSelect = `<select onchange="game.changeDiaryDate(this.value)" style="width:100%; margin-bottom:10px; padding:10px; border-radius:10px; border:2px solid #ff8fa3; font-weight:bold; outline:none;">`;
+            Object.keys(this.diary).forEach(date => {
+                dateSelect += `<option value="${date}" ${date === this.currentDiaryDate ? 'selected' : ''}>${date}</option>`;
+            });
+            dateSelect += `</select>`;
+
+            document.getElementById('modal-body').innerHTML = `
+                ${dateSelect}
+                <textarea id="diary-area" style="width:100%; height:150px; border-radius:15px; padding:10px; border:2px solid #ff8fa3; font-family:inherit; resize:none;">${this.diary[this.currentDiaryDate]}</textarea>
+                <button class="card active" style="width:100%; margin-top:10px;" onclick="game.saveNotes()">Сохранить 💾</button>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        },
+
+        changeDiaryDate(date) {
+            // Сохраняем текущий текст перед переключением даты
+            this.diary[this.currentDiaryDate] = document.getElementById('diary-area').value;
+            this.currentDiaryDate = date;
+            this.openDiary(); // Перерисовываем с новой датой
+        },
+
+        saveNotes() {
+            this.diary[this.currentDiaryDate] = document.getElementById('diary-area').value;
+            this.updateUI();
+            this.close();
+            this.showFloatingText('Сохранено! 📝');
+        },
+
+        // 2. ЦВЕТОК С ЛИМИТОМ
+        waterPlant() {
+            if (this.plantLevel >= 5) {
+                alert("🌳 Дерево уже выросло до максимума!");
+                return;
+            }
+            if (this.candies < 2) {
+                alert("💧 Нужно 2 🍬 для полива!");
+                return;
+            }
+            this.candies -= 2;
+            this.plantLevel++;
+            this.updateUI();
+            this.renderFurniture(); // Перерисовываем, чтобы эмодзи обновилось, если уровень 5
+            this.showFloatingText(`Полито! Уровень ${this.plantLevel}/5 💧`);
+        },
+
+        // 3. ЛАМПА С ТАЙМЕРОМ
+        startParty() {
+            if (this.partyActive) {
+                alert("🎉 Party уже идёт! Кликай быстрее!");
+                return;
+            }
+            
+            this.partyActive = true;
+            this.clickPower = 3; // В 3 раза больше конфет!
+            this.close();
+            this.showFloatingText('CANDY PARTY! x3 🍬');
+
+            const originalTheme = this.theme;
+            this.applyTheme('theme-neon'); // Врубаем неон для вечеринки
+
+            // Эффект мигания всей комнаты
+            let partyInterval = setInterval(() => {
+                document.body.style.background = Math.random() > 0.5 ? '#1a0033' : '#001a33';
+            }, 400);
+
+            // Конец через 10 секунд
+            setTimeout(() => {
+                clearInterval(partyInterval);
+                this.partyActive = false;
+                this.clickPower = 1;
+                this.applyTheme(originalTheme); // Возвращаем старую тему
+                alert("Candy Party окончена! Остываем... 😮‍💨");
+            }, 10000);
+        },
+
+        // --- ИСПРАВЛЕННЫЕ ТЕМЫ ---
+        openSettings() {
+            document.getElementById('modal-title').innerText = "Гардероб (Темы)";
+            document.getElementById('modal-body').innerHTML = `
+                <div class="grid">
+                    <div class="card" onclick="game.applyTheme('theme-pink')" style="background:#ffeaef; border-color:#ff8fa3;">Розовый 🌸</div>
+                    <div class="card" onclick="game.applyTheme('theme-dark')" style="background:#0b0f19; color:white; border-color:#334155;">Ночь 🌙</div>
+                    <div class="card" onclick="game.applyTheme('theme-neon')" style="background:#000; color:#39ff14; border-color:#39ff14;">Неон ⚡</div>
+                </div>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        },
+
+        applyTheme(t) {
+            this.theme = t;
+            const body = document.body.style;
+            const wall = document.querySelector('.wall').style;
+            const floor = document.querySelector('.floor').style;
+            
+            // Сбрасываем свечение перед сменой темы
+            wall.boxShadow = "none";
+            
+            if(t === 'theme-pink') {
+                body.background = "#ffeaef";
+                wall.background = "#ffc2d1";
+                floor.background = "#fb6f92";
+                floor.borderTop = "4px solid rgba(0,0,0,0.05)";
+            } else if(t === 'theme-dark') {
+                body.background = "#0b0f19"; // Глубокий ночной цвет
+                wall.background = "#141b2d";
+                floor.background = "#1f2940";
+                floor.borderTop = "4px solid #0b0f19";
+            } else if(t === 'theme-neon') {
+                body.background = "#000000";
+                wall.background = "#050505";
+                floor.background = "#0a0a0a";
+                floor.borderTop = "4px solid #39ff14"; // Яркая кислотная линия
+                wall.boxShadow = "inset 0 -15px 30px rgba(57, 255, 20, 0.15)"; // Неоновое свечение снизу
+            }
+            this.updateUI();
+        },
+
+        askOracle() {
+            const phrase = this.predictions[Math.floor(Math.random() * this.predictions.length)];
+            alert(`🔮 Оракул шепчет: \n\n"${phrase}"`);
+        },
+
+        showFloatingText(txt) {
+            const el = document.createElement('div');
+            el.innerText = txt;
+            el.style.position = 'absolute';
+            el.style.left = '50%';
+            el.style.bottom = '30%';
+            el.style.color = this.theme === 'theme-neon' ? '#39ff14' : '#ff6b8b';
+            el.style.fontWeight = 'bold';
+            el.style.fontSize = '24px';
+            el.style.transition = '1s';
+            el.style.zIndex = '100';
+            el.style.pointerEvents = 'none';
+            document.body.appendChild(el);
+            setTimeout(() => {
+                el.style.transform = 'translate(-50%, -50px)';
+                el.style.opacity = '0';
+            }, 10);
+            setTimeout(() => el.remove(), 1000);
+        },
+
+        buy(id) {
+            const item = this.shopItems[id];
+            if (this.candies >= item.price && !this.inventory.includes(id)) {
+                this.candies -= item.price;
+                this.inventory.push(id);
                 this.updateUI();
                 this.renderFurniture();
-                this.applyTheme(this.theme);
-            },
+                this.openShop();
+            }
+        },
 
-            clickPet() {
-                this.candies += this.clickPower;
-                this.updateUI();
-                this.showFloatingText(`+${this.clickPower} 🍬`);
-            },
-
-            updateUI() {
-                document.getElementById('candy-count').innerText = this.candies;
-                document.getElementById('pet').innerText = this.pet;
-                
-                localStorage.setItem('nhub_candies', this.candies);
-                localStorage.setItem('nhub_pet', this.pet);
-                localStorage.setItem('nhub_inv', JSON.stringify(this.inventory));
-                localStorage.setItem('nhub_theme', this.theme);
-                localStorage.setItem('nhub_diary', JSON.stringify(this.diary));
-                localStorage.setItem('nhub_plant', this.plantLevel);
-            },
-
-            renderFurniture() {
-                const layer = document.getElementById('furniture-layer');
-                layer.innerHTML = '';
-                
-                if (this.plantLevel >= 5 && this.shopItems['plant']) {
-                    this.shopItems['plant'].emoji = '🌳';
-                    this.shopItems['plant'].name = 'Дерево';
-                }
-
-                this.inventory.forEach(id => {
-                    const item = this.shopItems[id];
-                    if(item) {
-                        const div = document.createElement('div');
-                        div.className = 'placed-item';
-                        div.style.top = item.top;
-                        div.style.left = item.left;
-                        div.innerHTML = `${item.emoji}<span>${item.name}</span>`;
-                        div.onclick = (e) => { e.stopPropagation(); item.action(); };
-                        layer.appendChild(div);
-                    }
-                });
-            },
-
-            // --- ДНЕВНИК ---
-            openDiary() {
-                document.getElementById('modal-title').innerText = "Мой Дневник";
-                
-                let dateSelect = `<select onchange="game.changeDiaryDate(this.value)" style="width:100%; margin-bottom:10px; padding:10px; border-radius:10px; border:2px solid #ff8fa3; font-weight:bold; outline:none;">`;
-                Object.keys(this.diary).forEach(date => {
-                    dateSelect += `<option value="${date}" ${date === this.currentDiaryDate ? 'selected' : ''}>${date}</option>`;
-                });
-                dateSelect += `</select>`;
-
-                document.getElementById('modal-body').innerHTML = `
-                    ${dateSelect}
-                    <textarea id="diary-area" style="width:100%; height:150px; border-radius:15px; padding:10px; border:2px solid #ff8fa3; font-family:inherit; resize:none;">${this.diary[this.currentDiaryDate]}</textarea>
-                    <button class="card active" style="width:100%; margin-top:10px; border:none;" onclick="game.saveNotes()">Сохранить 💾</button>
-                `;
-                document.getElementById('modal').classList.remove('hidden');
-            },
-
-            changeDiaryDate(date) {
-                this.diary[this.currentDiaryDate] = document.getElementById('diary-area').value;
-                this.currentDiaryDate = date;
-                this.openDiary();
-            },
-
-            saveNotes() {
-                this.diary[this.currentDiaryDate] = document.getElementById('diary-area').value;
-                this.updateUI();
-                this.close();
-                this.showFloatingText('Сохранено! 📝');
-            },
-
-            // --- ЦВЕТОК ---
-            waterPlant() {
-                if (this.plantLevel >= 5) {
-                    alert("🌳 Дерево уже выросло до максимума!");
-                    return;
-                }
-                if (this.candies < 2) {
-                    alert("💧 Нужно 2 🍬 для полива!");
-                    return;
-                }
-                this.candies -= 2;
-                this.plantLevel++;
-                this.updateUI();
-                this.renderFurniture();
-                this.showFloatingText(`Полито! Уровень ${this.plantLevel}/5 💧`);
-            },
-
-            // --- ЛАМПА (ПАТИ) ---
-            startParty() {
-                if (this.partyActive) {
-                    alert("🎉 Party уже идёт! Кликай быстрее!");
-                    return;
-                }
-                
-                this.partyActive = true;
-                this.clickPower = 3;
-                this.close();
-                this.showFloatingText('CANDY PARTY! x3 🍬');
-
-                const originalTheme = this.theme;
-                this.applyTheme('theme-neon');
-
-                let partyInterval = setInterval(() => {
-                    document.body.style.background = Math.random() > 0.5 ? '#1a0033' : '#001a33';
-                }, 400);
-
-                setTimeout(() => {
-                    clearInterval(partyInterval);
-                    this.partyActive = false;
-                    this.clickPower = 1;
-                    this.applyTheme(originalTheme);
-                    alert("Candy Party окончена! Остываем... 😮‍💨");
-                }, 10000);
-            },
-
-            // --- ТЕМЫ И ГАРДЕРОБ ---
-            openSettings() {
-                document.getElementById('modal-title').innerText = "Гардероб (Темы)";
-                document.getElementById('modal-body').innerHTML = `
-                    <div class="grid">
-                        <div class="card" onclick="game.applyTheme('theme-pink')" style="background:#ffeaef; border-color:#ff8fa3;">Розовый 🌸</div>
-                        <div class="card" onclick="game.applyTheme('theme-dark')" style="background:#0b0f19; color:white; border-color:#334155;">Ночь 🌙</div>
-                        <div class="card" onclick="game.applyTheme('theme-neon')" style="background:#000; color:#39ff14; border-color:#39ff14;">Неон ⚡</div>
+        openShop() {
+            document.getElementById('modal-title').innerText = "Магазин";
+            let html = '<div class="grid">';
+            for (let id in this.shopItems) {
+                const item = this.shopItems[id];
+                const isOwned = this.inventory.includes(id);
+                html += `
+                    <div class="card ${isOwned ? 'active' : ''}" onclick="game.buy('${id}')">
+                        <div style="font-size:40px">${item.emoji}</div>
+                        <b>${item.name}</b><br>
+                        <small>${isOwned ? 'В комнате' : item.price + ' 🍬'}</small>
                     </div>
                 `;
-                document.getElementById('modal').classList.remove('hidden');
-            },
+            }
+            html += '</div>';
+            document.getElementById('modal-body').innerHTML = html;
+            document.getElementById('modal').classList.remove('hidden');
+        },
 
-            applyTheme(t) {
-                this.theme = t;
-                const body = document.body.style;
-                const wall = document.querySelector('.wall').style;
-                const floor = document.querySelector('.floor').style;
-                
-                wall.boxShadow = "none";
-                
-                if(t === 'theme-pink') {
-                    body.background = "#ffeaef";
-                    wall.background = "#ffc2d1";
-                    floor.background = "#fb6f92";
-                    floor.borderTop = "4px solid rgba(0,0,0,0.05)";
-                } else if(t === 'theme-dark') {
-                    body.background = "#0b0f19";
-                    wall.background = "#141b2d";
-                    floor.background = "#1f2940";
-                    floor.borderTop = "4px solid #0b0f19";
-                } else if(t === 'theme-neon') {
-                    body.background = "#000000";
-                    wall.background = "#050505";
-                    floor.background = "#0a0a0a";
-                    floor.borderTop = "4px solid #39ff14";
-                    wall.boxShadow = "inset 0 -15px 30px rgba(57, 255, 20, 0.15)";
-                }
-                this.updateUI();
-            },
+        openPets() {
+            document.getElementById('modal-title').innerText = "Друзья";
+            let html = '<div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 8px;">';
+            this.petList.forEach(p => {
+                html += `<div class="card ${this.pet === p ? 'active' : ''}" onclick="game.setPet('${p}')" style="font-size:35px; padding:10px;">${p}</div>`;
+            });
+            html += '</div>';
+            document.getElementById('modal-body').innerHTML = html;
+            document.getElementById('modal').classList.remove('hidden');
+        },
 
-            askOracle() {
-                const phrase = this.predictions[Math.floor(Math.random() * this.predictions.length)];
-                alert(`🔮 Оракул шепчет: \n\n"${phrase}"`);
-            },
+        setPet(emoji) { this.pet = emoji; this.updateUI(); this.close(); },
+        close() { document.getElementById('modal').classList.add('hidden'); },
+        closeBg(e) { if (e.target.id === 'modal') this.close(); }
+    };
 
-            showFloatingText(txt) {
-                const el = document.createElement('div');
-                el.innerText = txt;
-                el.style.position = 'absolute';
-                el.style.left = '50%';
-                el.style.bottom = '30%';
-                el.style.color = this.theme === 'theme-neon' ? '#39ff14' : '#ff6b8b';
-                el.style.fontWeight = 'bold';
-                el.style.fontSize = '24px';
-                el.style.transition = '1s';
-                el.style.zIndex = '100';
-                el.style.pointerEvents = 'none';
-                el.style.transform = 'translateX(-50%)';
-                document.body.appendChild(el);
-                setTimeout(() => {
-                    el.style.transform = 'translate(-50%, -50px)';
-                    el.style.opacity = '0';
-                }, 10);
-                setTimeout(() => el.remove(), 1000);
-            },
+    window.addEventListener('DOMContentLoaded', () => game.init());
+</script>
 
-            buy(id) {
-                const item = this.shopItems[id];
-                if (this.candies >= item.price && !this.inventory.includes(id)) {
-                    this.candies -= item.price;
-                    this.inventory.push(id);
-                    this.updateUI();
-                    this.renderFurniture();
-                    this.openShop();
-                }
-            },
-
-            openShop() {
-                document.getElementById('modal-title').innerText = "Магазин";
-                let html = '<div class="grid">';
-                for (let id in this.shopItems) {
-                    const item = this.shopItems[id];
-                    const isOwned = this.inventory.includes(id);
-                    html += `
-                        <div class="card ${isOwned ? 'active' : ''}" onclick="game.buy('${id}')">
-                            <div style="font-size:40px">${item.emoji}</div>
-                            <b style="color:#ff6b8b">${item.name}</b><br>
-                            <small>${isOwned ? 'В комнате' : item.price + ' 🍬'}</small>
-                        </div>
-                    `;
-                }
-                html += '</div>';
-                document.getElementById('modal-body').innerHTML = html;
-                document.getElementById('modal').classList.remove('hidden');
-            },
-
-            openPets() {
-                document.getElementById('modal-title').innerText = "Питомцы";
-                let html = '<div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 8px;">';
-                this.petList.forEach(p => {
-                    html += `<div class="card ${this.pet === p ? 'active' : ''}" onclick="game.setPet('${p}')" style="font-size:35px; padding:10px;">${p}</div>`;
-                });
-                html += '</div>';
-                document.getElementById('modal-body').innerHTML = html;
-                document.getElementById('modal').classList.remove('hidden');
-            },
-
-            setPet(emoji) { this.pet = emoji; this.updateUI(); this.close(); },
-            close() { document.getElementById('modal').classList.add('hidden'); },
-            closeBg(e) { if (e.target.id === 'modal') this.close(); }
-        };
-
-        window.addEventListener('DOMContentLoaded', () => game.init());
-    </script>
 </body>
 </html>
