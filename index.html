@@ -3,49 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NyashHub | Final Fix</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;800&family=Inter:wght@400;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <title>NyashHub - 100% Work</title>
+    <style>
+        /* БАЗА - Убиваем любые отступы и блокируем скролл */
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        body, html { width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: #ffeaef; }
+
+        /* КОНТЕЙНЕР - Жестко фиксируем на весь экран */
+        #app { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* КОМНАТА - Никаких 3D, обычные блоки */
+        .room-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+        .wall { width: 100%; height: 60%; background: #ffc2d1; }
+        .floor { width: 100%; height: 40%; background: #fb6f92; border-top: 4px solid rgba(0,0,0,0.05); }
+
+        /* ПИТОМЕЦ */
+        #pet-container { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); z-index: 10; cursor: pointer; text-align: center; }
+        #pet { font-size: 130px; user-select: none; transition: 0.1s; animation: float 3s infinite ease-in-out; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
+        #pet-container:active #pet { transform: scale(0.9); }
+
+        /* ИНТЕРФЕЙС - Выведен на передний план (z-index 20) */
+        #hud { position: absolute; top: 30px; left: 20px; right: 20px; z-index: 20; display: flex; justify-content: space-between; align-items: flex-start; }
+        .badge { background: white; padding: 12px 20px; border-radius: 20px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); color: #ff6b8b; }
+        .btn-group { display: flex; gap: 10px; }
+        .btn { width: 55px; height: 55px; background: white; border: none; border-radius: 50%; font-size: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        /* МОДАЛЬНЫЕ ОКНА */
+        #modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 35px; padding: 25px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: #ff6b8b; }
+        .close-btn { background: #fff0f3; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; color: #ff8fa3; }
+
+        /* КАРТОЧКИ В МАГАЗИНЕ */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .card { background: #f8f9fa; border-radius: 20px; padding: 15px; text-align: center; cursor: pointer; border: 3px solid transparent; }
+        .card.active { border-color: #ff8fa3; background: #fff0f3; }
+
+        /* МЕБЕЛЬ В КОМНАТЕ */
+        #furniture-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+        .placed-item { position: absolute; pointer-events: auto; text-align: center; font-size: 55px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); }
+        .placed-item span { display: block; font-size: 10px; background: #ff8fa3; color: white; padding: 3px 8px; border-radius: 10px; font-weight: bold; margin-top: -5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .hidden { display: none !important; }
+    </style>
 </head>
-<body class="theme-pink">
+<body>
+    <div id="app">
+        <div class="room-bg">
+            <div class="wall"></div>
+            <div class="floor"></div>
+        </div>
 
-    <div id="app-container">
-        <header class="ui-layer">
-            <div id="btn-shop" class="stat-badge">
-                🍬 <span id="balance">0</span>
-            </div>
-            <div class="controls">
-                <button id="btn-pets" class="icon-btn"><i class="fas fa-paw"></i></button>
-                <button id="btn-settings" class="icon-btn"><i class="fas fa-magic"></i></button>
-            </div>
-        </header>
+        <div id="furniture-layer"></div>
 
-        <main id="scene">
-            <div class="environment">
-                <div class="wall"></div>
-                <div class="floor"></div>
-            </div>
-            
-            <div id="furniture-overlay"></div>
+        <div id="pet-container" onclick="game.clickPet()">
+            <div id="pet">🤖</div>
+        </div>
 
-            <div id="pet-trigger" class="pet-actor">
-                <div id="pet-view">🤖</div>
-                <div class="pet-shadow"></div>
+        <div id="hud">
+            <div class="badge">🍬 <span id="candy-count">0</span></div>
+            <div class="btn-group">
+                <button class="btn" onclick="game.openShop()">🛒</button>
+                <button class="btn" onclick="game.openPets()">🐾</button>
             </div>
-        </main>
+        </div>
 
-        <section id="modal-overlay" class="modal-system hidden">
-            <div class="modal-card">
-                <div class="modal-nav">
+        <div id="modal" class="hidden" onclick="game.closeBg(event)">
+            <div class="modal-content">
+                <div class="modal-header">
                     <h2 id="modal-title">Меню</h2>
-                    <button id="modal-close" class="close-x">&times;</button>
+                    <button class="close-btn" onclick="game.close()">×</button>
                 </div>
-                <div id="modal-body" class="scroll-box"></div>
+                <div id="modal-body"></div>
             </div>
-        </section>
+        </div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        const game = {
+            // Загружаем прогресс из кэша браузера
+            candies: parseInt(localStorage.getItem('nhub_candies')) || 0,
+            pet: localStorage.getItem('nhub_pet') || '🤖',
+            inventory: JSON.parse(localStorage.getItem('nhub_inv')) || [],
+            
+            // База предметов
+            shopItems: {
+                'bed': { name: 'Кровать', price: 15, emoji: '🛏️', top: '55%', left: '10%' },
+                'pc': { name: 'Компьютер', price: 30, emoji: '🖥️', top: '50%', left: '70%' },
+                'plant': { name: 'Цветок', price: 5, emoji: '🪴', top: '65%', left: '80%' },
+                'lamp': { name: 'Лампа', price: 10, emoji: '💡', top: '45%', left: '25%' }
+            },
+
+            // Список питомцев
+            petList: ['🤖', '🐱', '🐶', '🐹', '🐰', '🦊', '🦄', '🐲'],
+
+            // Запуск игры
+            init() {
+                this.updateUI();
+                this.renderFurniture();
+            },
+
+            // Клик по питомцу
+            clickPet() {
+                this.candies++;
+                this.updateUI();
+            },
+
+            // Обновление интерфейса
+            updateUI() {
+                document.getElementById('candy-count').innerText = this.candies;
+                document.getElementById('pet').innerText = this.pet;
+                
+                localStorage.setItem('nhub_candies', this.candies);
+                localStorage.setItem('nhub_pet', this.pet);
+                localStorage.setItem('nhub_inv', JSON.stringify(this.inventory));
+            },
+
+            // Отрисовка купленной мебели в комнате
+            renderFurniture() {
+                const layer = document.getElementById('furniture-layer');
+                layer.innerHTML = '';
+                this.inventory.forEach(id => {
+                    const item = this.shopItems[id];
+                    if(item) {
+                        const div = document.createElement('div');
+                        div.className = 'placed-item';
+                        div.style.top = item.top;
+                        div.style.left = item.left;
+                        div.innerHTML = `${item.emoji}<span>${item.name}</span>`;
+                        layer.appendChild(div);
+                    }
+                });
+            },
+
+            // Покупка
+            buy(id) {
+                const item = this.shopItems[id];
+                if (this.candies >= item.price && !this.inventory.includes(id)) {
+                    this.candies -= item.price;
+                    this.inventory.push(id);
+                    this.updateUI();
+                    this.renderFurniture();
+                    this.openShop(); 
+                } else if (this.inventory.includes(id)) {
+                    alert('Уже куплено!');
+                } else {
+                    alert('Нужно больше конфет!');
+                }
+            },
+
+            // Смена питомца
+            setPet(emoji) {
+                this.pet = emoji;
+                this.updateUI();
+                this.close();
+            },
+
+            // Открытие магазина
+            openShop() {
+                document.getElementById('modal-title').innerText = "Магазин";
+                let html = '<div class="grid">';
+                for (let id in this.shopItems) {
+                    const item = this.shopItems[id];
+                    const isOwned = this.inventory.includes(id);
+                    html += `
+                        <div class="card ${isOwned ? 'active' : ''}" onclick="game.buy('${id}')">
+                            <div style="font-size:40px">${item.emoji}</div>
+                            <b style="color:#ff6b8b">${item.name}</b><br>
+                            <small>${isOwned ? 'В комнате' : item.price + ' 🍬'}</small>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+                document.getElementById('modal-body').innerHTML = html;
+                document.getElementById('modal').classList.remove('hidden');
+            },
+
+            // Открытие выбора питомцев
+            openPets() {
+                document.getElementById('modal-title').innerText = "Питомцы";
+                let html = '<div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 8px;">';
+                this.petList.forEach(p => {
+                    const isActive = this.pet === p;
+                    html += `
+                        <div class="card ${isActive ? 'active' : ''}" onclick="game.setPet('${p}')" style="font-size:35px; padding:10px;">
+                            ${p}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                document.getElementById('modal-body').innerHTML = html;
+                document.getElementById('modal').classList.remove('hidden');
+            },
+
+            close() {
+                document.getElementById('modal').classList.add('hidden');
+            },
+
+            closeBg(e) {
+                if (e.target.id === 'modal') {
+                    this.close();
+                }
+            }
+        };
+
+        // Старт скрипта ровно в тот момент, когда страница загрузилась
+        window.addEventListener('DOMContentLoaded', () => game.init());
+    </script>
 </body>
 </html>
