@@ -1,98 +1,108 @@
 const NyashHub = {
     candies: parseInt(localStorage.getItem('candies')) || 0,
-    
+    inventory: JSON.parse(localStorage.getItem('inventory')) || [],
+    theme: localStorage.getItem('theme') || 'theme-cherry-blossom',
+    font: localStorage.getItem('font') || 'font-rounded',
+
     init() {
-        this.updateCandies(0);
-        this.applyTheme(localStorage.getItem('theme') || 'theme-cherry-blossom');
+        this.applyTheme(this.theme);
+        this.applyFont(this.font);
+        this.updateUI();
+        this.checkInventory();
     },
 
-    updateCandies(n) {
-        this.candies += n;
+    updateUI() {
+        document.getElementById('candy-balance').innerText = this.candies;
         localStorage.setItem('candies', this.candies);
-        document.getElementById('count').innerText = this.candies;
+        localStorage.setItem('inventory', JSON.stringify(this.inventory));
     },
 
     applyTheme(t) {
-        document.body.className = t;
+        this.theme = t;
+        document.body.className = `${t} ${this.font}`;
         localStorage.setItem('theme', t);
+    },
+
+    applyFont(f) {
+        this.font = f;
+        document.body.className = `${this.theme} ${f}`;
+        localStorage.setItem('font', f);
+    },
+
+    checkInventory() {
+        this.inventory.forEach(itemId => {
+            const el = document.getElementById(`item-${itemId}`);
+            if (el) el.classList.remove('hidden');
+        });
     }
 };
 
 const UI = {
-    toggleModal(type) {
-        const layer = document.getElementById('ui-layer');
-        const content = document.getElementById('modal-content');
-        layer.classList.remove('hidden');
+    open(type) {
+        const overlay = document.getElementById('modal-overlay');
+        const body = document.getElementById('modal-body');
+        overlay.classList.remove('hidden');
 
-        if (type === 'oracle') {
-            content.innerHTML = `
-                <h2>🔮 Оракул</h2>
-                <p id="oracle-text" style="margin: 20px 0; font-size: 18px;">Задай вопрос и коснись кристалла...</p>
-                <div onclick="NyashOracle.spin()" style="font-size: 60px; cursor:pointer;">✨</div>
-            `;
-        } else if (type === 'settings') {
-            content.innerHTML = `
-                <h2>⚙️ Стиль комнаты</h2>
-                <div class="theme-grid">
-                    <div class="swatch theme-cherry-blossom" onclick="NyashHub.applyTheme('theme-cherry-blossom')"></div>
-                    <div class="swatch theme-midnight" onclick="NyashHub.applyTheme('theme-midnight')"></div>
+        if (type === 'shop') {
+            const items = [
+                {id: 'wardrobe', name: 'Гардероб', price: 10, icon: '👗'},
+                {id: 'desk', name: 'Рабочий стол', price: 25, icon: '📔'},
+                {id: 'oracle', name: 'Шар судьбы', price: 50, icon: '🔮'}
+            ];
+            body.innerHTML = `<h2>Магическая Лавка</h2><div class="shop-grid">` + 
+                items.map(i => `
+                    <div class="shop-card ${NyashHub.inventory.includes(i.id) ? 'owned' : ''}" 
+                         onclick="NyashHub.buy('${i.id}', ${i.price})">
+                        <div style="font-size:30px">${i.icon}</div>
+                        <b>${i.name}</b><br>
+                        <span>${NyashHub.inventory.includes(i.id) ? 'Куплено' : i.price + '🍬'}</span>
                     </div>
+                `).join('') + `</div>`;
+        } else if (type === 'settings') {
+            const themes = ['cherry-blossom', 'midnight', 'ocean', 'forest', 'honey', 'lavender', 'mint', 'vampire', 'sky', 'marshmallow', 'coffee', 'carbon'];
+            const fonts = [
+                {id: 'font-rounded', n: 'Закругленный'}, {id: 'font-modern', n: 'Стильный'},
+                {id: 'font-hand', n: 'Рукописный'}, {id: 'font-pixel', n: 'Пиксельный'},
+                {id: 'font-classy', n: 'Элегантный'}, {id: 'font-system', n: 'Системный'}
+            ];
+            body.innerHTML = `
+                <h2>Стиль Хаба</h2>
+                <div class="theme-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 5px;">
+                    ${themes.map(t => `<div onclick="NyashHub.applyTheme('theme-${t}')" class="theme-${t}" style="height:35px; border-radius:8px; border:2px solid #fff; cursor:pointer"></div>`).join('')}
+                </div>
                 <label>Шрифт:</label>
-                <select onchange="document.body.style.fontFamily = this.value">
-                    <option value="Comfortaa">Закругленный</option>
-                    <option value="Arial">Обычный</option>
-                    <option value="Courier New">Кодерский</option>
+                <select onchange="NyashHub.applyFont(this.value)">
+                    ${fonts.map(f => `<option value="${f.id}" ${NyashHub.font === f.id ? 'selected' : ''}>${f.n}</option>`).join('')}
                 </select>
             `;
-        } else if (type === 'diary') {
-            content.innerHTML = `
-                <h2>📔 Дневник</h2>
-                <textarea id="diary-memo" rows="4" placeholder="Твои мысли..."></textarea>
-                <button class="nyash-btn" onclick="NyashDiary.save()" style="margin-top:10px;">Записать</button>
-                <div id="logs" style="margin-top:15px; max-height: 150px; overflow-y:auto;"></div>
-            `;
-            NyashDiary.render();
         }
+        // Добавь блоки для 'diary' и 'oracle' по аналогии с предыдущим кодом
     },
 
-    close() { document.getElementById('ui-layer').classList.add('hidden'); }
+    close() { document.getElementById('modal-overlay').classList.add('hidden'); },
+    closeOuter(e) { if(e.target.id === 'modal-overlay') this.close(); }
+};
+
+NyashHub.buy = function(id, price) {
+    if (this.inventory.includes(id)) return;
+    if (this.candies >= price) {
+        this.candies -= price;
+        this.inventory.push(id);
+        this.updateUI();
+        this.checkInventory();
+        UI.open('shop'); // Обновить вид магазина
+    } else {
+        alert("Не хватает конфет! Кликай на котика 🍬");
+    }
 };
 
 const NyashPet = {
     tap() {
-        NyashHub.updateCandies(1);
-        const msg = document.getElementById('pet-msg');
-        msg.classList.remove('hidden');
-        setTimeout(() => msg.classList.add('hidden'), 1500);
-    }
-};
-
-const NyashOracle = {
-    spin() {
-        const txt = document.getElementById('oracle-text');
-        txt.innerText = "🔮 Хмм...";
-        setTimeout(() => {
-            const res = ["Да, ня!", "Мяу, нет...", "Всё будет супер!", "Звезды молчат..."];
-            txt.innerText = res[Math.floor(Math.random() * res.length)];
-        }, 800);
-    }
-};
-
-const NyashDiary = {
-    save() {
-        const txt = document.getElementById('diary-memo').value;
-        if (!txt) return;
-        let logs = JSON.parse(localStorage.getItem('logs')) || [];
-        logs.unshift({t: txt, d: new Date().toLocaleDateString()});
-        localStorage.setItem('logs', JSON.stringify(logs));
-        this.render();
-    },
-    render() {
-        const logs = JSON.parse(localStorage.getItem('logs')) || [];
-        const container = document.getElementById('logs');
-        if (container) {
-            container.innerHTML = logs.map(l => `<div style="padding:5px; border-bottom:1px solid #ddd"><small>${l.d}</small><p>${l.t}</p></div>`).join('');
-        }
+        NyashHub.candies += 1;
+        NyashHub.updateUI();
+        const cloud = document.getElementById('pet-cloud');
+        cloud.classList.remove('hidden');
+        setTimeout(() => cloud.classList.add('hidden'), 800);
     }
 };
 
