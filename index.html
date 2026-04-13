@@ -20,11 +20,11 @@
         .btn { width: 55px; height: 55px; background: white; border: none; border-radius: 50%; font-size: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
         #pet-container { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); z-index: 10; cursor: pointer; text-align: center; }
-        #pet { font-size: 130px; user-select: none; transition: 0.1s; animation: float 3s infinite ease-in-out; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
+        #pet { font-size: 130px; user-select: none; transition: filter 0.1s; animation: float 3s infinite ease-in-out; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
         #pet-container:active #pet { transform: scale(0.9); }
 
         #furniture-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-        .placed-item { position: absolute; pointer-events: auto; text-align: center; font-size: 55px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); cursor: pointer; transition: transform 0.1s; }
+        .placed-item { position: absolute; pointer-events: auto; text-align: center; font-size: 55px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); cursor: pointer; transition: transform 0.1s, filter 0.1s; }
         .placed-item:active { transform: scale(0.9); }
         .placed-item span { display: block; font-size: 10px; background: white; color: #ff6b8b; padding: 3px 8px; border-radius: 10px; font-weight: bold; margin-top: -5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
@@ -98,11 +98,11 @@
             
             shopItems: {
                 'wardrobe': { name: 'Шкаф', price: 10, emoji: '👗', top: '20%', left: '10%', action: () => game.openSettings() },
-                'diary': { name: 'Дневник', price: 20, emoji: '📔', top: '60%', left: '15%', action: () => game.openDiary() },
+                'diary': { name: 'Дневник', price: 20, emoji: '📔', top: '75%', left: '25%', action: () => game.openDiary() }, // Отодвинули от кровати
                 'oracle': { name: 'Оракул', price: 40, emoji: '🔮', top: '25%', left: '75%', action: () => game.askOracle() },
                 'pc': { name: 'ПК', price: 50, emoji: '🖥️', top: '50%', left: '70%', action: () => game.openMiniGame() },
-                'bed': { name: 'Кровать', price: 15, emoji: '🛏️', top: '55%', left: '10%', action: () => game.customAlert('Кровать 🛏️', 'Питомец сладко спит... Zzz... 🌙<br><br><small>Самое время немного отдохнуть!</small>') },
-                'lamp': { name: 'Лампа', price: 10, emoji: '💡', top: '45%', left: '25%', action: () => game.startParty() },
+                'bed': { name: 'Кровать', price: 15, emoji: '🛏️', top: '55%', left: '10%', action: () => game.sleepPet() }, // Новая функция сна
+                'lamp': { name: 'Лампа', price: 10, emoji: '💡', top: '45%', left: '30%', action: () => game.startParty() },
                 'plant': { name: 'Цветок', price: 5, emoji: '🪴', top: '65%', left: '80%', action: () => game.waterPlant() }
             },
 
@@ -126,6 +126,7 @@
             },
 
             clickPet() {
+                // Если спит, клик может разбудить, но пусть просто фармит дальше
                 this.candies += this.clickPower;
                 this.updateUI();
                 this.showFloatingText(`+${this.clickPower} 🍬`);
@@ -133,10 +134,13 @@
 
             updateUI() {
                 document.getElementById('candy-count').innerText = this.candies;
-                document.getElementById('pet').innerText = this.pet;
+                // Не перезаписываем эмодзи, если питомец временно спит
+                if (document.getElementById('pet').innerText !== '💤') {
+                    document.getElementById('pet').innerText = this.pet;
+                }
                 
                 localStorage.setItem('nhub_candies', this.candies);
-                localStorage.setItem('nhub_pet', this.pet);
+                localStorage.setItem('nhub_pet', this.pet); // Сохраняем всегда оригинального
                 localStorage.setItem('nhub_inv', JSON.stringify(this.inventory));
                 localStorage.setItem('nhub_theme', this.theme);
                 localStorage.setItem('nhub_diary', JSON.stringify(this.diary));
@@ -166,7 +170,6 @@
                 });
             },
 
-            // --- КРАСИВЫЕ ВНУТРИИГРОВЫЕ ОКНА (ВМЕСТО ALERT) ---
             customAlert(title, text) {
                 document.getElementById('modal-title').innerText = title;
                 document.getElementById('modal-body').innerHTML = `
@@ -176,6 +179,18 @@
                     <button class="card active" style="width:100%; margin-top:10px; border:none;" onclick="game.close()">Понятно 💖</button>
                 `;
                 document.getElementById('modal').classList.remove('hidden');
+            },
+
+            // --- НОВАЯ ФУНКЦИЯ: СОН ПИТОМЦА ---
+            sleepPet() {
+                this.customAlert('Кровать 🛏️', 'Питомец сладко уснул... Zzz... 🌙<br><br><small>Он проснется через 10 секунд!</small>');
+                const petEl = document.getElementById('pet');
+                petEl.innerText = '💤';
+                
+                // Просыпается через 10 секунд
+                setTimeout(() => {
+                    petEl.innerText = this.pet;
+                }, 10000);
             },
 
             // --- МИНИ-ИГРА НА ПК ---
@@ -189,7 +204,6 @@
                 `;
                 document.getElementById('modal').classList.remove('hidden');
                 
-                // Конфета прыгает каждые 700мс
                 this.mgInterval = setInterval(() => {
                     const target = document.getElementById('mg-target');
                     if(target) {
@@ -242,7 +256,6 @@
                 this.showFloatingText('Сохранено! 📝');
             },
 
-            // --- ЦВЕТОК ---
             waterPlant() {
                 if (this.plantLevel >= 5) {
                     this.customAlert("🪴 Цветок", "🌳 Дерево уже выросло до максимума!");
@@ -259,7 +272,7 @@
                 this.showFloatingText(`Уровень ${this.plantLevel}/5 💧`);
             },
 
-            // --- ЛАМПА (CANDY PARTY С МИГАНИЕМ ВСЕГО) ---
+            // --- ОБНОВЛЕННАЯ CANDY PARTY (ПРЕДМЕТЫ ТОЖЕ ПЕРЕЛИВАЮТСЯ) ---
             startParty() {
                 if (this.partyActive) {
                     this.customAlert("🎉 Party!", "Вечеринка уже идёт! Кликай быстрее!");
@@ -277,10 +290,19 @@
                 const colors = ['#ff007f', '#00ff00', '#00d4ff', '#ffea00', '#9d00ff', '#ff3300'];
 
                 let partyInterval = setInterval(() => {
+                    // Фон
                     let randomColor = colors[Math.floor(Math.random() * colors.length)];
                     body.background = randomColor;
                     wall.background = randomColor;
                     floor.background = randomColor;
+
+                    // Предметы и питомец (смещение цветов)
+                    let randomDegree = Math.floor(Math.random() * 360);
+                    document.querySelectorAll('.placed-item').forEach(item => {
+                        item.style.filter = `drop-shadow(0 5px 10px rgba(0,0,0,0.1)) hue-rotate(${randomDegree}deg)`;
+                    });
+                    document.getElementById('pet').style.filter = `drop-shadow(0 10px 10px rgba(0,0,0,0.1)) hue-rotate(${randomDegree}deg)`;
+
                 }, 300);
 
                 setTimeout(() => {
@@ -288,11 +310,18 @@
                     this.partyActive = false;
                     this.clickPower = 1;
                     this.applyTheme(this.theme); // Возвращаем нормальную тему
+                    
+                    // Сбрасываем фильтры предметов
+                    document.querySelectorAll('.placed-item').forEach(item => {
+                        item.style.filter = `drop-shadow(0 5px 10px rgba(0,0,0,0.1))`;
+                    });
+                    document.getElementById('pet').style.filter = `drop-shadow(0 10px 10px rgba(0,0,0,0.1))`;
+
                     this.customAlert("🎉 Party!", "Candy Party окончена! Остываем... 😮‍💨");
                 }, 10000);
             },
 
-            // --- ТЕМЫ И ГАРДЕРОБ ---
+            // --- ОБНОВЛЕННЫЕ 6 ТЕМ ---
             openSettings() {
                 document.getElementById('modal-title').innerText = "Гардероб (Темы)";
                 document.getElementById('modal-body').innerHTML = `
@@ -300,6 +329,9 @@
                         <div class="card" onclick="game.applyTheme('theme-pink')" style="background:#ffeaef; border-color:#ff8fa3;">Розовый 🌸</div>
                         <div class="card" onclick="game.applyTheme('theme-dark')" style="background:#0b0f19; color:white; border-color:#334155;">Ночь 🌙</div>
                         <div class="card" onclick="game.applyTheme('theme-neon')" style="background:#000; color:#39ff14; border-color:#39ff14;">Неон ⚡</div>
+                        <div class="card" onclick="game.applyTheme('theme-ocean')" style="background:#e0f7fa; color:#006064; border-color:#26c6da;">Океан 🌊</div>
+                        <div class="card" onclick="game.applyTheme('theme-forest')" style="background:#e8f5e9; color:#1b5e20; border-color:#66bb6a;">Лес 🌲</div>
+                        <div class="card" onclick="game.applyTheme('theme-sunset')" style="background:#fff3e0; color:#e65100; border-color:#ffb74d;">Закат 🌅</div>
                     </div>
                 `;
                 document.getElementById('modal').classList.remove('hidden');
@@ -314,21 +346,24 @@
                 wall.boxShadow = "none";
                 
                 if(t === 'theme-pink') {
-                    body.background = "#ffeaef";
-                    wall.background = "#ffc2d1";
-                    floor.background = "#fb6f92";
+                    body.background = "#ffeaef"; wall.background = "#ffc2d1"; floor.background = "#fb6f92";
                     floor.borderTop = "4px solid rgba(0,0,0,0.05)";
                 } else if(t === 'theme-dark') {
-                    body.background = "#0b0f19";
-                    wall.background = "#141b2d";
-                    floor.background = "#1f2940";
+                    body.background = "#0b0f19"; wall.background = "#141b2d"; floor.background = "#1f2940";
                     floor.borderTop = "4px solid #0b0f19";
                 } else if(t === 'theme-neon') {
-                    body.background = "#000000";
-                    wall.background = "#050505";
-                    floor.background = "#0a0a0a";
+                    body.background = "#000000"; wall.background = "#050505"; floor.background = "#0a0a0a";
                     floor.borderTop = "4px solid #39ff14";
                     wall.boxShadow = "inset 0 -15px 30px rgba(57, 255, 20, 0.15)";
+                } else if(t === 'theme-ocean') {
+                    body.background = "#e0f7fa"; wall.background = "#b2ebf2"; floor.background = "#4dd0e1";
+                    floor.borderTop = "4px solid rgba(0,0,0,0.05)";
+                } else if(t === 'theme-forest') {
+                    body.background = "#e8f5e9"; wall.background = "#c8e6c9"; floor.background = "#81c784";
+                    floor.borderTop = "4px solid rgba(0,0,0,0.05)";
+                } else if(t === 'theme-sunset') {
+                    body.background = "#fff3e0"; wall.background = "#ffe0b2"; floor.background = "#ffb74d";
+                    floor.borderTop = "4px solid rgba(0,0,0,0.05)";
                 }
                 this.updateUI();
             },
@@ -338,15 +373,14 @@
                 this.customAlert("🔮 Оракул шепчет:", phrase);
             },
 
-            // --- ИСПРАВЛЕННЫЙ ТЕКСТ (БЕЛЫЙ С ТЕНЬЮ) ---
             showFloatingText(txt) {
                 const el = document.createElement('div');
                 el.innerText = txt;
                 el.style.position = 'absolute';
                 el.style.left = '50%';
                 el.style.bottom = '30%';
-                el.style.color = 'white'; // Сделали белым
-                el.style.textShadow = '0px 2px 4px rgba(0,0,0,0.5)'; // Добавили тень для читаемости
+                el.style.color = 'white';
+                el.style.textShadow = '0px 2px 4px rgba(0,0,0,0.5)';
                 el.style.fontWeight = 'bold';
                 el.style.fontSize = '24px';
                 el.style.transition = '1s';
@@ -402,11 +436,16 @@
                 document.getElementById('modal').classList.remove('hidden');
             },
 
-            setPet(emoji) { this.pet = emoji; this.updateUI(); this.close(); },
+            setPet(emoji) { 
+                this.pet = emoji; 
+                document.getElementById('pet').innerText = emoji; // Принудительно меняем, если спал
+                this.updateUI(); 
+                this.close(); 
+            },
             
             close() { 
                 document.getElementById('modal').classList.add('hidden'); 
-                if(this.mgInterval) clearInterval(this.mgInterval); // Останавливаем мини-игру при закрытии
+                if(this.mgInterval) clearInterval(this.mgInterval); 
             },
             
             closeBg(e) { if (e.target.id === 'modal') this.close(); }
