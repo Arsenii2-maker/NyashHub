@@ -1,51 +1,51 @@
 :root {
-    --bg-color: #ffeaef;
-    --wall-color: #ffc2d1;
-    --floor-color: #fb6f92;
-    --accent: #ff8fa3;
+    --tr: 0.3s ease;
+    --pink-bg: #ffeaef; --pink-wall: #ffc2d1; --pink-floor: #fb6f92;
+    --dark-bg: #1a1a2e; --dark-wall: #16213e; --dark-floor: #0f3460;
 }
 
-/* ТЕМЫ */
-.theme-pink { --bg-color: #ffeaef; --wall-color: #ffc2d1; --floor-color: #fb6f92; --accent: #ff8fa3; }
-.theme-dark { --bg-color: #1a1a2e; --wall-color: #16213e; --floor-color: #0f3460; --accent: #e94560; }
-.theme-toxic { --bg-color: #051405; --wall-color: #0a200a; --floor-color: #153a15; --accent: #39ff14; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body, html { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body, html { width: 100%; height: 100%; overflow: hidden; background: var(--bg-color); font-family: 'Inter', sans-serif; }
+.theme-pink { background: var(--pink-bg); --wall: var(--pink-wall); --floor: var(--pink-floor); --accent: #ff8fa3; }
+.theme-dark { background: var(--dark-bg); --wall: var(--dark-wall); --floor: var(--floor); --accent: #e94560; }
 
-/* HUD */
-.hud { position: fixed; top: 40px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 1000; }
-.candy-stats { background: rgba(255,255,255,0.8); padding: 10px 20px; border-radius: 20px; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; }
-.hud-btns { display: flex; gap: 10px; }
-.circle-btn { width: 45px; height: 45px; border-radius: 50%; border: none; background: rgba(255,255,255,0.8); cursor: pointer; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+#app-container { width: 100%; height: 100%; position: relative; }
 
-/* КОМНАТА */
-#room { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
-.room-background { position: absolute; inset: 0; z-index: 1; }
-.wall { height: 65%; background: var(--wall-color); width: 100%; }
-.floor { height: 35%; background: var(--floor-color); width: 100%; border-top: 4px solid rgba(0,0,0,0.05); }
+/* HUD - Всегда сверху */
+.ui-layer { 
+    position: absolute; top: 40px; left: 0; width: 100%; 
+    display: flex; justify-content: space-between; padding: 0 20px; 
+    z-index: 9999; pointer-events: none; /* Пропускает клики сквозь контейнер */
+}
+.stat-badge, .icon-btn { pointer-events: auto; cursor: pointer; } /* Но разрешает кликать по самим кнопкам */
 
-/* ПИТОМЕЦ */
-.pet-wrapper { position: relative; z-index: 100; text-align: center; cursor: pointer; transition: transform 0.1s; }
-.pet-wrapper:active { transform: scale(0.9); }
-#pet-emoji { font-size: 120px; animation: idle 3s infinite ease-in-out; }
-.shadow { width: 80px; height: 15px; background: rgba(0,0,0,0.1); border-radius: 50%; margin: -10px auto 0; }
+.stat-badge { background: white; padding: 12px 20px; border-radius: 20px; font-weight: 800; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.icon-btn { width: 50px; height: 50px; border-radius: 50%; border: none; background: white; margin-left: 10px; font-size: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 
-/* ПРЕДМЕТЫ */
-.furniture-item { position: absolute; z-index: 50; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-.furniture-item span { font-size: 60px; }
-.furniture-item b { background: var(--accent); color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 5px; }
+/* SCENE */
+#scene { width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.environment { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.wall { height: 60%; background: var(--wall); }
+.floor { height: 40%; background: var(--floor); border-top: 5px solid rgba(0,0,0,0.05); }
 
-/* ОКНО */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-.modal-content { background: white; width: 90%; max-width: 400px; border-radius: 30px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.close-btn { background: none; border: none; font-size: 30px; cursor: pointer; }
+.pet-actor { position: relative; z-index: 100; cursor: pointer; transition: 0.1s; }
+.pet-actor:active { transform: scale(0.95); }
+#pet-view { font-size: 130px; animation: float 3s infinite ease-in-out; }
 
-/* ГРИДЫ */
+/* MODAL */
+.modal-system { 
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
+    backdrop-filter: blur(10px); z-index: 10000; 
+    display: flex; align-items: center; justify-content: center; 
+}
+.modal-card { background: white; width: 90%; max-width: 400px; border-radius: 40px; padding: 30px; }
+.modal-nav { display: flex; justify-content: space-between; margin-bottom: 20px; }
+.close-x { border: none; background: none; font-size: 35px; cursor: pointer; }
+
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.card { background: #f0f0f0; padding: 15px; border-radius: 20px; text-align: center; cursor: pointer; border: 3px solid transparent; }
-.card.owned { border-color: var(--accent); background: var(--bg-color); }
+.option-card { background: #f7f7f7; padding: 20px; border-radius: 25px; text-align: center; cursor: pointer; border: 3px solid transparent; }
+.option-card.active { border-color: var(--accent); background: #fff1f3; }
 
-@keyframes idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
 .hidden { display: none !important; }
