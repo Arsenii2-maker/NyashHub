@@ -3,45 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NyashHub Fixed</title>
+    <title>NyashHub | Final Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;800&family=Inter:wght@400;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="theme-pink font-main">
+<body class="theme-pink">
 
-    <div class="hud">
-        <div class="candy-stats" onclick="UI.open('shop')">
-            🍬 <span id="count">0</span>
-        </div>
-        <div class="hud-btns">
-            <button class="circle-btn" onclick="UI.open('pets')"><i class="fas fa-paw"></i></button>
-            <button class="circle-btn" onclick="UI.open('settings')"><i class="fas fa-magic"></i></button>
-        </div>
-    </div>
-
-    <main id="room">
-        <div class="room-background">
-            <div class="wall"></div>
-            <div class="floor"></div>
-        </div>
-
-        <div id="furniture"></div>
-
-        <div class="pet-wrapper" onclick="App.clickPet()">
-            <div id="pet-emoji">🤖</div>
-            <div class="shadow"></div>
-        </div>
-    </main>
-
-    <div id="modal" class="modal-overlay hidden" onclick="UI.closeBg(event)">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="m-title">Меню</h2>
-                <button onclick="UI.close()" class="close-btn">&times;</button>
+    <div id="app-container">
+        <header class="ui-layer">
+            <div id="btn-shop" class="stat-badge">
+                🍬 <span id="balance">0</span>
             </div>
-            <div id="m-body"></div>
-        </div>
+            <div class="controls">
+                <button id="btn-pets" class="icon-btn"><i class="fas fa-paw"></i></button>
+                <button id="btn-settings" class="icon-btn"><i class="fas fa-magic"></i></button>
+            </div>
+        </header>
+
+        <main id="scene">
+            <div class="environment">
+                <div class="wall"></div>
+                <div class="floor"></div>
+            </div>
+            
+            <div id="furniture-overlay"></div>
+
+            <div id="pet-trigger" class="pet-actor">
+                <div id="pet-view">🤖</div>
+                <div class="pet-shadow"></div>
+            </div>
+        </main>
+
+        <section id="modal-overlay" class="modal-system hidden">
+            <div class="modal-card">
+                <div class="modal-nav">
+                    <h2 id="modal-title">Меню</h2>
+                    <button id="modal-close" class="close-x">&times;</button>
+                </div>
+                <div id="modal-body" class="scroll-box"></div>
+            </div>
+        </section>
     </div>
 
     <script src="app.js"></script>
