@@ -3,45 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NyashHub | My Best Room</title>
+    <title>NyashHub Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;800&family=Pacifico&family=Inter:wght@400;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="theme-cherry-blossom font-main">
+<body class="theme-pink font-main">
 
-    <div id="app">
-        <div class="room-view">
-            <div class="wall-back"></div>
+    <div class="hud">
+        <div class="candy-stats" onclick="UI.open('shop')">
+            🍬 <span id="count">0</span>
+        </div>
+        <div class="hud-btns">
+            <button class="circle-btn" onclick="UI.open('pets')"><i class="fas fa-paw"></i></button>
+            <button class="circle-btn" onclick="UI.open('settings')"><i class="fas fa-magic"></i></button>
+        </div>
+    </div>
+
+    <main id="room">
+        <div class="room-background">
+            <div class="wall"></div>
             <div class="floor"></div>
-            
-            <div id="furniture-grid"></div>
-
-            <div class="char-container" onclick="Core.tap(event)">
-                <div id="tap-effect" class="hidden">+1 🍬</div>
-                <div id="main-pet">🤖</div>
-                <div class="char-shadow"></div>
-            </div>
         </div>
 
-        <div class="ui-top">
-            <div class="pill-stat glass-btn" onclick="UI.open('shop')">
-                <span class="candy-icon">🍬</span> <span id="balance">0</span>
-            </div>
-            <div class="ui-group">
-                <button class="pill-btn glass-btn" onclick="UI.open('pets')"><i class="fas fa-paw"></i></button>
-                <button class="pill-btn glass-btn" onclick="UI.open('settings')"><i class="fas fa-magic"></i></button>
-            </div>
-        </div>
+        <div id="furniture"></div>
 
-        <div id="modal-wrap" class="hidden">
-            <div class="modal-box glass-card">
-                <div class="modal-header">
-                    <h2 id="m-title">Меню</h2>
-                    <button onclick="UI.close()" class="close-x">×</button>
-                </div>
-                <div id="m-body"></div>
+        <div class="pet-wrapper" onclick="App.clickPet()">
+            <div id="pet-emoji">🤖</div>
+            <div class="shadow"></div>
+        </div>
+    </main>
+
+    <div id="modal" class="modal-overlay hidden" onclick="UI.closeBg(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="m-title">Меню</h2>
+                <button onclick="UI.close()" class="close-btn">&times;</button>
             </div>
+            <div id="m-body"></div>
         </div>
     </div>
 
