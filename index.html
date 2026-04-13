@@ -3,52 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NyashHub | My Room</title>
+    <title>NyashHub | My Real Room</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="theme-cherry-blossom font-rounded">
 
     <div id="nyash-world">
-        <div class="light-fx"></div>
-        <div class="window-glare"></div>
+        <div class="room-box">
+            <div class="wall-left"></div>
+            <div class="wall-right"></div>
+            <div class="floor"></div>
+            <div class="window"></div>
 
-        <div class="room-scene">
-            
-            <div class="room-obj wardrobe" onclick="UI.toggleModal('settings')">
-                <div class="obj-icon">👗</div>
-                <span class="obj-label">Гардероб</span>
-            </div>
+            <div id="room-items">
+                <div class="pet-anchor" onclick="NyashPet.tap()">
+                    <div id="pet-cloud" class="speech-cloud hidden">Ня! +1🍬</div>
+                    <div class="pet-body">🤖</div>
+                    <div class="shadow"></div>
+                </div>
 
-            <div class="room-obj desk" onclick="UI.toggleModal('diary')">
-                <div class="obj-icon">📔</div>
-                <span class="obj-label">Дневник</span>
-            </div>
-
-            <div class="room-obj shelf" onclick="UI.toggleModal('oracle')">
-                <div class="obj-icon">🔮</div>
-                <span class="obj-label">Оракул</span>
-            </div>
-
-            <div class="pet-wrapper" onclick="NyashPet.tap()">
-                <div id="pet-msg" class="pet-speech hidden">Ня! ✨</div>
-                <div class="pet-shadow"></div>
-                <div id="pet-main" class="pet-anim">🤖</div>
-            </div>
-
-        </div>
-
-        <div class="top-hud">
-            <div class="candy-bar glass-ui">
-                <span class="icon">🍬</span>
-                <span id="count">0</span>
+                <div id="item-wardrobe" class="item hidden" onclick="UI.open('settings')">👗<span>Шкаф</span></div>
+                <div id="item-desk" class="item hidden" onclick="UI.open('diary')">📔<span>Стол</span></div>
+                <div id="item-oracle" class="item hidden" onclick="UI.open('oracle')">🔮<span>Оракул</span></div>
             </div>
         </div>
 
-        <div id="ui-layer" class="hidden">
-            <div class="modal-card glass-heavy">
-                <div id="modal-content"></div>
-                <button class="nyash-btn close" onclick="UI.close()">Закрыть</button>
+        <header class="hub-hud glass-ui">
+            <div class="coins">🍬 <span id="candy-balance">0</span></div>
+            <button class="shop-btn" onclick="UI.open('shop')">🛒 Магазин</button>
+        </header>
+
+        <div id="modal-overlay" class="hidden" onclick="UI.closeOuter(event)">
+            <div class="modal-window glass-heavy">
+                <div id="modal-body"></div>
+                <button class="close-nyash" onclick="UI.close()">Закрыть</button>
             </div>
         </div>
     </div>
