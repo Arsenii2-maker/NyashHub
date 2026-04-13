@@ -3,52 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NyashHub v2.0 | Изометрическая Вселенная</title>
+    <title>NyashHub 3.0 | My Evolution</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&family=JetBrains+Mono:wght@500&family=Pacifico&family=Inter:wght@400;900&family=Kelly+Slab&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;900&family=JetBrains+Mono:wght@500&family=Pacifico&family=Inter:wght@400;900&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="theme-cherry-blossom font-main">
 
-    <div id="app-root">
-        <div class="room-container">
-            <div class="walls">
-                <div class="wall left-wall"></div>
-                <div class="wall right-wall"></div>
-            </div>
-            <div class="floor-area"></div>
+    <div id="world">
+        <div class="room-stage">
+            <div class="wall-l"></div>
+            <div class="wall-r"></div>
+            <div class="floor-base"></div>
             
-            <div id="room-canvas"></div>
+            <div id="furniture-layer"></div>
 
-            <div class="pet-anchor" onclick="PetEngine.tap(event)">
-                <div id="pet-speech" class="bubble hidden">Ня! ✨</div>
-                <div class="pet-sprite">🤖</div>
-                <div class="pet-shadow"></div>
+            <div class="pet-zone" onclick="Game.tapPet(event)">
+                <div id="tap-msg" class="pop-up hidden">+1 🍬</div>
+                <div id="pet-avatar" class="pet-main-sprite">🤖</div>
+                <div class="shadow-oval"></div>
             </div>
         </div>
 
-        <div class="hud-layer">
-            <div class="balance-card glass-ui" onclick="UIMachine.open('shop')">
-                <span class="candy-icon">🍬</span>
-                <span id="candy-val">0</span>
+        <div class="hud">
+            <div class="stat-pill glass" onclick="UI.open('shop')">
+                <span class="candy-ico">🍬</span> <span id="balance">0</span>
             </div>
-            <div class="action-buttons">
-                <button class="circle-btn glass-ui" onclick="UIMachine.open('settings')"><i class="fas fa-palette"></i></button>
-                <button class="circle-btn glass-ui" onclick="UIMachine.open('inventory')"><i class="fas fa-box-open"></i></button>
+            <div class="side-menu">
+                <button class="btn-round glass" onclick="UI.open('pet-select')"><i class="fas fa-paw"></i></button>
+                <button class="btn-round glass" onclick="UI.open('settings')"><i class="fas fa-cog"></i></button>
             </div>
         </div>
 
-        <div id="modal-overlay" class="modal-system hidden" onclick="UIMachine.closeOnOut(event)">
-            <div class="modal-window glass-heavy">
-                <div class="modal-header">
-                    <h2 id="modal-title">Заголовок</h2>
-                    <button class="close-x" onclick="UIMachine.close()">×</button>
+        <div id="modal-screen" class="modal-overlay hidden" onclick="UI.closeOnBg(event)">
+            <div class="modal-window glass-card">
+                <div class="modal-head">
+                    <h2 id="modal-title">Няш-Меню</h2>
+                    <button class="x-btn" onclick="UI.close()">×</button>
                 </div>
-                <div id="modal-body" class="modal-scroll-area"></div>
+                <div id="modal-body" class="modal-content"></div>
             </div>
         </div>
 
-        <div id="toast-container"></div>
+        <div id="notif-box"></div>
     </div>
 
     <script src="app.js"></script>
