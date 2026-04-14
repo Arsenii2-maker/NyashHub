@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ffeaef">
-    <link rel="icon" href="icon.png" type="image/png">
-    <link rel="apple-touch-icon" href="icon.png"> </head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NyashHub</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffeaef">
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon.png">
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         body, html { width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: #ffeaef; transition: background 0.3s; }
@@ -17,6 +19,12 @@
         .room-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
         .wall { width: 100%; height: 60%; background: #ffc2d1; transition: background 0.3s, box-shadow 0.3s; }
         .floor { width: 100%; height: 40%; background: #fb6f92; border-top: 4px solid rgba(0,0,0,0.05); transition: background 0.3s, border-color 0.3s; }
+
+        /* Навигация по комнатам */
+        #room-title { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); z-index: 15; font-size: 24px; font-weight: bold; color: #ff6b8b; text-shadow: 0 2px 4px rgba(255,255,255,0.8); background: rgba(255,255,255,0.5); padding: 5px 15px; border-radius: 20px; }
+        .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); z-index: 20; width: 50px; height: 50px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; font-size: 30px; color: #ff6b8b; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        #nav-left { left: 10px; }
+        #nav-right { right: 10px; }
 
         #hud { position: absolute; top: 30px; left: 20px; right: 20px; z-index: 20; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
         .badge { pointer-events: auto; background: white; padding: 12px 20px; border-radius: 20px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); color: #ff6b8b; }
@@ -51,6 +59,10 @@
             <div class="wall"></div>
             <div class="floor"></div>
         </div>
+
+        <button id="nav-left" class="nav-btn" onclick="game.changeRoom(-1)">‹</button>
+        <div id="room-title">🛏️ Спальня</div>
+        <button id="nav-right" class="nav-btn" onclick="game.changeRoom(1)">›</button>
 
         <div id="furniture-layer"></div>
 
@@ -100,18 +112,38 @@
             clickPower: 1,
             mgInterval: null,
             
+            // Новая система комнат
+            rooms: ['yard', 'bedroom', 'kitchen'],
+            roomNames: ['🌳 Двор', '🛏️ Спальня', '🍳 Кухня'],
+            currentRoomIndex: 1, // Начинаем со спальни
+            
+            // Новая система сна
+            isSleeping: false,
+            sleepInterval: null,
+
             shopItems: {
-                'wardrobe': { name: 'Шкаф', price: 10, emoji: '👗', top: '20%', left: '10%', action: () => game.openSettings() },
-                'diary': { name: 'Дневник', price: 20, emoji: '📔', top: '75%', left: '25%', action: () => game.openDiary() }, // Отодвинули от кровати
-                'oracle': { name: 'Оракул', price: 40, emoji: '🔮', top: '25%', left: '75%', action: () => game.askOracle() },
-                'pc': { name: 'ПК', price: 50, emoji: '🖥️', top: '50%', left: '70%', action: () => game.openMiniGame() },
-                'bed': { name: 'Кровать', price: 15, emoji: '🛏️', top: '55%', left: '10%', action: () => game.sleepPet() }, // Новая функция сна
-                'lamp': { name: 'Лампа', price: 10, emoji: '💡', top: '45%', left: '30%', action: () => game.startParty() },
-                'plant': { name: 'Цветок', price: 5, emoji: '🪴', top: '65%', left: '80%', action: () => game.waterPlant() }
+                // СПАЛЬНЯ (bedroom)
+                'wardrobe': { room: 'bedroom', name: 'Шкаф', price: 10, emoji: '👗', top: '20%', left: '10%', action: () => game.openSettings() },
+                'diary': { room: 'bedroom', name: 'Дневник', price: 20, emoji: '📔', top: '75%', left: '25%', action: () => game.openDiary() },
+                'oracle': { room: 'bedroom', name: 'Оракул', price: 40, emoji: '🔮', top: '25%', left: '75%', action: () => game.askOracle() },
+                'pc': { room: 'bedroom', name: 'ПК', price: 50, emoji: '🖥️', top: '50%', left: '70%', action: () => game.openMiniGame() },
+                'bed': { room: 'bedroom', name: 'Кровать', price: 15, emoji: '🛏️', top: '55%', left: '10%', action: () => game.toggleSleep() },
+                'lamp': { room: 'bedroom', name: 'Лампа', price: 10, emoji: '💡', top: '45%', left: '30%', action: () => game.startParty() },
+                'plant': { room: 'bedroom', name: 'Цветок', price: 5, emoji: '🪴', top: '65%', left: '80%', action: () => game.waterPlant() },
+                
+                // ДВОР (yard)
+                'hammock': { room: 'yard', name: 'Гамак', price: 20, emoji: '🛶', top: '50%', left: '20%', action: () => game.customAlert('Гамак', 'Отличное место для отдыха на свежем воздухе!') },
+                'doghouse': { room: 'yard', name: 'Будка', price: 30, emoji: '🛖', top: '60%', left: '70%', action: () => game.customAlert('Будка', 'Тут будет жить охранник нашего двора.') },
+                'garden': { room: 'yard', name: 'Грядка', price: 40, emoji: '🌱', top: '75%', left: '10%', action: () => game.customAlert('Грядка', 'Скоро здесь можно будет выращивать леденцы!') },
+                'pool': { room: 'yard', name: 'Бассейн', price: 100, emoji: '🏊', top: '45%', left: '50%', action: () => game.customAlert('Бассейн', 'Плюх! Скоро добавим мини-игру по прыжкам в воду.') },
+
+                // КУХНЯ (kitchen)
+                'fridge': { room: 'kitchen', name: 'Холод-к', price: 25, emoji: '🧊', top: '30%', left: '20%', action: () => game.customAlert('Холодильник', 'Здесь хранятся бусты энергии и энергетики.') },
+                'stove': { room: 'kitchen', name: 'Плита', price: 35, emoji: '♨️', top: '45%', left: '70%', action: () => game.customAlert('Плита', 'Место для приготовления тортиков и десертов.') },
+                'bowl': { room: 'kitchen', name: 'Миска', price: 15, emoji: '🥣', top: '70%', left: '50%', action: () => game.customAlert('Миска', 'Если миска полная, питомец радуется и приносит больше конфет!') }
             },
 
             petList: ['🤖', '🐱', '🐶', '🐹', '🐰', '🦊', '🦄', '🐲', '👽', '👻'],
-            
             predictions: [
                 "Сегодня будет очень няшный день! ✨",
                 "Твой код скомпилируется с первого раза! 💻",
@@ -124,13 +156,57 @@
                 if (!this.diary[this.currentDiaryDate]) {
                     this.diary[this.currentDiaryDate] = "";
                 }
+                this.updateRoomUI();
                 this.updateUI();
-                this.renderFurniture();
                 this.applyTheme(this.theme);
             },
 
+            // --- СИСТЕМА КОМНАТ ---
+            changeRoom(direction) {
+                this.currentRoomIndex += direction;
+                if (this.currentRoomIndex < 0) this.currentRoomIndex = 0;
+                if (this.currentRoomIndex > 2) this.currentRoomIndex = 2;
+                
+                this.updateRoomUI();
+            },
+
+            updateRoomUI() {
+                // Обновляем заголовок и кнопки навигации
+                document.getElementById('room-title').innerText = this.roomNames[this.currentRoomIndex];
+                document.getElementById('nav-left').style.display = this.currentRoomIndex === 0 ? 'none' : 'block';
+                document.getElementById('nav-right').style.display = this.currentRoomIndex === 2 ? 'none' : 'block';
+                
+                // Перерисовываем мебель для текущей комнаты
+                this.renderFurniture();
+            },
+
+            // --- СИСТЕМА СНА (AFK-РЕЖИМ) ---
+            toggleSleep() {
+                if (this.isSleeping) {
+                    // Пробуждение
+                    this.isSleeping = false;
+                    clearInterval(this.sleepInterval);
+                    document.getElementById('pet').innerText = this.pet;
+                    this.customAlert('Пробуждение ☀️', 'Питомец проснулся и готов играть дальше!');
+                } else {
+                    // Засыпание
+                    this.isSleeping = true;
+                    document.getElementById('pet').innerText = '💤';
+                    this.customAlert('Сон 🛏️', 'Питомец сладко уснул... Zzz... 🌙<br><br><small>Включен AFK-режим. Ты будешь получать +1 🍬 каждую минуту!</small>');
+                    
+                    this.sleepInterval = setInterval(() => {
+                        this.candies += 1;
+                        this.updateUI();
+                        this.showFloatingText('+1 🍬');
+                    }, 60000); // Раз в минуту
+                }
+            },
+
             clickPet() {
-                // Если спит, клик может разбудить, но пусть просто фармит дальше
+                if (this.isSleeping) {
+                    this.showFloatingText('Zzz...');
+                    return; // Нельзя кликать, пока спит
+                }
                 this.candies += this.clickPower;
                 this.updateUI();
                 this.showFloatingText(`+${this.clickPower} 🍬`);
@@ -138,13 +214,12 @@
 
             updateUI() {
                 document.getElementById('candy-count').innerText = this.candies;
-                // Не перезаписываем эмодзи, если питомец временно спит
-                if (document.getElementById('pet').innerText !== '💤') {
+                if (!this.isSleeping) {
                     document.getElementById('pet').innerText = this.pet;
                 }
                 
                 localStorage.setItem('nhub_candies', this.candies);
-                localStorage.setItem('nhub_pet', this.pet); // Сохраняем всегда оригинального
+                localStorage.setItem('nhub_pet', this.pet);
                 localStorage.setItem('nhub_inv', JSON.stringify(this.inventory));
                 localStorage.setItem('nhub_theme', this.theme);
                 localStorage.setItem('nhub_diary', JSON.stringify(this.diary));
@@ -160,9 +235,12 @@
                     this.shopItems['plant'].name = 'Дерево';
                 }
 
+                const currentRoomName = this.rooms[this.currentRoomIndex];
+
                 this.inventory.forEach(id => {
                     const item = this.shopItems[id];
-                    if(item) {
+                    // Рисуем предмет, только если он принадлежит текущей комнате
+                    if(item && item.room === currentRoomName) {
                         const div = document.createElement('div');
                         div.className = 'placed-item';
                         div.style.top = item.top;
@@ -185,19 +263,6 @@
                 document.getElementById('modal').classList.remove('hidden');
             },
 
-            // --- НОВАЯ ФУНКЦИЯ: СОН ПИТОМЦА ---
-            sleepPet() {
-                this.customAlert('Кровать 🛏️', 'Питомец сладко уснул... Zzz... 🌙<br><br><small>Он проснется через 10 секунд!</small>');
-                const petEl = document.getElementById('pet');
-                petEl.innerText = '💤';
-                
-                // Просыпается через 10 секунд
-                setTimeout(() => {
-                    petEl.innerText = this.pet;
-                }, 10000);
-            },
-
-            // --- МИНИ-ИГРА НА ПК ---
             openMiniGame() {
                 document.getElementById('modal-title').innerText = "🕹️ Nyash-Catcher";
                 document.getElementById('modal-body').innerHTML = `
@@ -229,10 +294,8 @@
                 }
             },
 
-            // --- ДНЕВНИК ---
             openDiary() {
                 document.getElementById('modal-title').innerText = "Мой Дневник";
-                
                 let dateSelect = `<select onchange="game.changeDiaryDate(this.value)" style="width:100%; margin-bottom:10px; padding:10px; border-radius:10px; border:2px solid #ff8fa3; font-weight:bold; outline:none; color:#ff6b8b;">`;
                 Object.keys(this.diary).forEach(date => {
                     dateSelect += `<option value="${date}" ${date === this.currentDiaryDate ? 'selected' : ''}>${date}</option>`;
@@ -276,7 +339,6 @@
                 this.showFloatingText(`Уровень ${this.plantLevel}/5 💧`);
             },
 
-            // --- ОБНОВЛЕННАЯ CANDY PARTY (ПРЕДМЕТЫ ТОЖЕ ПЕРЕЛИВАЮТСЯ) ---
             startParty() {
                 if (this.partyActive) {
                     this.customAlert("🎉 Party!", "Вечеринка уже идёт! Кликай быстрее!");
@@ -294,28 +356,22 @@
                 const colors = ['#ff007f', '#00ff00', '#00d4ff', '#ffea00', '#9d00ff', '#ff3300'];
 
                 let partyInterval = setInterval(() => {
-                    // Фон
                     let randomColor = colors[Math.floor(Math.random() * colors.length)];
-                    body.background = randomColor;
-                    wall.background = randomColor;
-                    floor.background = randomColor;
+                    body.background = randomColor; wall.background = randomColor; floor.background = randomColor;
 
-                    // Предметы и питомец (смещение цветов)
                     let randomDegree = Math.floor(Math.random() * 360);
                     document.querySelectorAll('.placed-item').forEach(item => {
                         item.style.filter = `drop-shadow(0 5px 10px rgba(0,0,0,0.1)) hue-rotate(${randomDegree}deg)`;
                     });
                     document.getElementById('pet').style.filter = `drop-shadow(0 10px 10px rgba(0,0,0,0.1)) hue-rotate(${randomDegree}deg)`;
-
                 }, 300);
 
                 setTimeout(() => {
                     clearInterval(partyInterval);
                     this.partyActive = false;
                     this.clickPower = 1;
-                    this.applyTheme(this.theme); // Возвращаем нормальную тему
+                    this.applyTheme(this.theme);
                     
-                    // Сбрасываем фильтры предметов
                     document.querySelectorAll('.placed-item').forEach(item => {
                         item.style.filter = `drop-shadow(0 5px 10px rgba(0,0,0,0.1))`;
                     });
@@ -325,7 +381,6 @@
                 }, 10000);
             },
 
-            // --- ОБНОВЛЕННЫЕ 6 ТЕМ ---
             openSettings() {
                 document.getElementById('modal-title').innerText = "Гардероб (Темы)";
                 document.getElementById('modal-body').innerHTML = `
@@ -343,10 +398,7 @@
 
             applyTheme(t) {
                 this.theme = t;
-                const body = document.body.style;
-                const wall = document.querySelector('.wall').style;
-                const floor = document.querySelector('.floor').style;
-                
+                const body = document.body.style; const wall = document.querySelector('.wall').style; const floor = document.querySelector('.floor').style;
                 wall.boxShadow = "none";
                 
                 if(t === 'theme-pink') {
@@ -411,20 +463,31 @@
             },
 
             openShop() {
-                document.getElementById('modal-title').innerText = "Магазин";
+                // Обновленный магазин показывает товары только для текущей комнаты
+                document.getElementById('modal-title').innerText = `Магазин (${this.roomNames[this.currentRoomIndex]})`;
                 let html = '<div class="grid">';
+                
+                const currentRoomName = this.rooms[this.currentRoomIndex];
+                let hasItems = false;
+
                 for (let id in this.shopItems) {
                     const item = this.shopItems[id];
-                    const isOwned = this.inventory.includes(id);
-                    html += `
-                        <div class="card ${isOwned ? 'active' : ''}" onclick="game.buy('${id}')">
-                            <div style="font-size:40px">${item.emoji}</div>
-                            <b style="color:#ff6b8b">${item.name}</b><br>
-                            <small>${isOwned ? 'В комнате' : item.price + ' 🍬'}</small>
-                        </div>
-                    `;
+                    if (item.room === currentRoomName) {
+                        hasItems = true;
+                        const isOwned = this.inventory.includes(id);
+                        html += `
+                            <div class="card ${isOwned ? 'active' : ''}" onclick="game.buy('${id}')">
+                                <div style="font-size:40px">${item.emoji}</div>
+                                <b style="color:#ff6b8b">${item.name}</b><br>
+                                <small>${isOwned ? 'Куплено' : item.price + ' 🍬'}</small>
+                            </div>
+                        `;
+                    }
                 }
+                
+                if (!hasItems) html += `<div style="grid-column: span 2; text-align:center;">Здесь пока нечего купить!</div>`;
                 html += '</div>';
+                
                 document.getElementById('modal-body').innerHTML = html;
                 document.getElementById('modal').classList.remove('hidden');
             },
@@ -442,7 +505,7 @@
 
             setPet(emoji) { 
                 this.pet = emoji; 
-                document.getElementById('pet').innerText = emoji; // Принудительно меняем, если спал
+                if (!this.isSleeping) document.getElementById('pet').innerText = emoji; 
                 this.updateUI(); 
                 this.close(); 
             },
@@ -455,17 +518,16 @@
             closeBg(e) { if (e.target.id === 'modal') this.close(); }
         };
 
-        window.addEventListener('DOMContentLoaded', () => game.init());
-    // ...логика игры...
-
-    // ЗАПУСК PWA (Service Worker)
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js') // Нам нужен пустой файл sw.js
-                .then(reg => console.log('PWA Registered', reg))
-                .catch(err => console.log('PWA Failed', err));
+        window.addEventListener('DOMContentLoaded', () => {
+            game.init();
+            
+            // ЗАПУСК PWA (Service Worker)
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('PWA Registered', reg))
+                    .catch(err => console.log('PWA Failed', err));
+            }
         });
-    }
-</script>
+    </script>
 </body>
 </html>
