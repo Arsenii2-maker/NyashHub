@@ -122,25 +122,25 @@
             sleepInterval: null,
 
             shopItems: {
-                // СПАЛЬНЯ (bedroom)
-                'wardrobe': { room: 'bedroom', name: 'Шкаф', price: 10, emoji: '👗', top: '20%', left: '10%', action: () => game.openSettings() },
-                'diary': { room: 'bedroom', name: 'Дневник', price: 20, emoji: '📔', top: '75%', left: '25%', action: () => game.openDiary() },
-                'oracle': { room: 'bedroom', name: 'Оракул', price: 40, emoji: '🔮', top: '25%', left: '75%', action: () => game.askOracle() },
-                'pc': { room: 'bedroom', name: 'ПК', price: 50, emoji: '🖥️', top: '50%', left: '70%', action: () => game.openMiniGame() },
-                'bed': { room: 'bedroom', name: 'Кровать', price: 15, emoji: '🛏️', top: '55%', left: '10%', action: () => game.toggleSleep() },
-                'lamp': { room: 'bedroom', name: 'Лампа', price: 10, emoji: '💡', top: '45%', left: '30%', action: () => game.startParty() },
+                // СПАЛЬНЯ (bedroom) - координаты исправлены, логика на месте
+                'wardrobe': { room: 'bedroom', name: 'Шкаф', price: 10, emoji: '👗', top: '48%', left: '10%', action: () => game.openSettings() },
+                'diary': { room: 'bedroom', name: 'Дневник', price: 20, emoji: '📔', top: '58%', left: '35%', action: () => game.openDiary() },
+                'oracle': { room: 'bedroom', name: 'Оракул', price: 40, emoji: '🔮', top: '35%', left: '75%', action: () => game.askOracle() },
+                'pc': { room: 'bedroom', name: 'ПК', price: 50, emoji: '🖥️', top: '45%', left: '70%', action: () => game.openMiniGame() },
+                'bed': { room: 'bedroom', name: 'Кровать', price: 15, emoji: '🛏️', top: '60%', left: '10%', action: () => game.toggleSleep() },
+                'lamp': { room: 'bedroom', name: 'Лампа', price: 10, emoji: '💡', top: '10%', left: '45%', action: () => game.startParty() },
                 'plant': { room: 'bedroom', name: 'Цветок', price: 5, emoji: '🪴', top: '65%', left: '80%', action: () => game.waterPlant() },
                 
-                // ДВОР (yard)
-                'hammock': { room: 'yard', name: 'Гамак', price: 20, emoji: '🛶', top: '50%', left: '20%', action: () => game.customAlert('Гамак', 'Отличное место для отдыха на свежем воздухе!') },
-                'doghouse': { room: 'yard', name: 'Будка', price: 30, emoji: '🛖', top: '60%', left: '70%', action: () => game.customAlert('Будка', 'Тут будет жить охранник нашего двора.') },
-                'garden': { room: 'yard', name: 'Грядка', price: 40, emoji: '🌱', top: '75%', left: '10%', action: () => game.customAlert('Грядка', 'Скоро здесь можно будет выращивать леденцы!') },
-                'pool': { room: 'yard', name: 'Бассейн', price: 100, emoji: '🏊', top: '45%', left: '50%', action: () => game.customAlert('Бассейн', 'Плюх! Скоро добавим мини-игру по прыжкам в воду.') },
+                // ДВОР (yard) - исправлены координаты и добавлен уникальный интерактив
+                'hammock': { room: 'yard', name: 'Гамак', price: 20, emoji: '🛶', top: '45%', left: '15%', action: () => { game.customAlert('Гамак', 'Ты покачался в гамаке и нашел +1 🍬!'); game.candies += 1; game.updateUI(); } },
+                'doghouse': { room: 'yard', name: 'Будка', price: 30, emoji: '🛖', top: '55%', left: '75%', action: () => game.customAlert('Будка', 'Гав-гав! 🐶 Охранник на месте, двор в безопасности.') },
+                'garden': { room: 'yard', name: 'Грядка', price: 40, emoji: '🌱', top: '68%', left: '20%', action: () => { game.customAlert('Грядка', 'Урожай собран! +3 🍬'); game.candies += 3; game.updateUI(); } },
+                'pool': { room: 'yard', name: 'Бассейн', price: 100, emoji: '🏊', top: '62%', left: '50%', action: () => { game.customAlert('Бассейн', 'Плюх! 💦 Питомец освежился!'); const p = document.getElementById('pet'); p.style.transform = 'scale(1.2)'; setTimeout(()=> p.style.transform = '', 300); } },
 
-                // КУХНЯ (kitchen)
-                'fridge': { room: 'kitchen', name: 'Холод-к', price: 25, emoji: '🧊', top: '30%', left: '20%', action: () => game.customAlert('Холодильник', 'Здесь хранятся бусты энергии и энергетики.') },
-                'stove': { room: 'kitchen', name: 'Плита', price: 35, emoji: '♨️', top: '45%', left: '70%', action: () => game.customAlert('Плита', 'Место для приготовления тортиков и десертов.') },
-                'bowl': { room: 'kitchen', name: 'Миска', price: 15, emoji: '🥣', top: '70%', left: '50%', action: () => game.customAlert('Миска', 'Если миска полная, питомец радуется и приносит больше конфет!') }
+                // КУХНЯ (kitchen) - исправлены координаты и добавлен уникальный интерактив
+                'fridge': { room: 'kitchen', name: 'Холод-к', price: 25, emoji: '🧊', top: '38%', left: '15%', action: () => { if(game.candies>=5){ game.candies-=5; game.clickPower=2; game.updateUI(); game.customAlert('Холодильник', 'Выпит энергетик за 5 🍬! Сила клика x2 на 10 сек!'); setTimeout(()=>{game.clickPower=1;}, 10000); } else { game.customAlert('Холодильник', 'Нужно 5 🍬 для энергетика!'); } } },
+                'stove': { room: 'kitchen', name: 'Плита', price: 35, emoji: '♨️', top: '48%', left: '70%', action: () => { game.customAlert('Плита', 'Ты испек блинчики! 🥞 +2 🍬'); game.candies += 2; game.updateUI(); } },
+                'bowl': { room: 'kitchen', name: 'Миска', price: 15, emoji: '🥣', top: '75%', left: '25%', action: () => game.customAlert('Миска', 'Ом-ном-ном! 😋 Питомец сыт и счастлив!') }
             },
 
             petList: ['🤖', '🐱', '🐶', '🐹', '🐰', '🦊', '🦄', '🐲', '👽', '👻'],
@@ -158,10 +158,9 @@
                 }
                 this.updateRoomUI();
                 this.updateUI();
-                this.applyTheme(this.theme);
             },
 
-            // --- СИСТЕМА КОМНАТ ---
+            // --- СИСТЕМА КОМНАТ: ОБНОВЛЕНО ---
             changeRoom(direction) {
                 this.currentRoomIndex += direction;
                 if (this.currentRoomIndex < 0) this.currentRoomIndex = 0;
@@ -171,12 +170,34 @@
             },
 
             updateRoomUI() {
-                // Обновляем заголовок и кнопки навигации
                 document.getElementById('room-title').innerText = this.roomNames[this.currentRoomIndex];
                 document.getElementById('nav-left').style.display = this.currentRoomIndex === 0 ? 'none' : 'block';
                 document.getElementById('nav-right').style.display = this.currentRoomIndex === 2 ? 'none' : 'block';
                 
-                // Перерисовываем мебель для текущей комнаты
+                // Визуальное отличие комнат
+                const body = document.body.style;
+                const wall = document.querySelector('.wall').style;
+                const floor = document.querySelector('.floor').style;
+                
+                if (this.currentRoomIndex === 0) {
+                    // Двор
+                    body.background = "#87CEEB"; 
+                    wall.background = "#87CEEB"; 
+                    floor.background = "#7CFC00"; 
+                    floor.borderTop = "4px solid #32CD32";
+                    wall.boxShadow = "none";
+                } else if (this.currentRoomIndex === 2) {
+                    // Кухня
+                    body.background = "#FFFACD"; 
+                    wall.background = "#FFFACD"; 
+                    floor.background = "#F4A460"; 
+                    floor.borderTop = "4px solid #D2691E";
+                    wall.boxShadow = "none";
+                } else {
+                    // Спальня - возвращаем выбранную тему
+                    this.applyTheme(this.theme);
+                }
+
                 this.renderFurniture();
             },
 
@@ -205,7 +226,7 @@
             clickPet() {
                 if (this.isSleeping) {
                     this.showFloatingText('Zzz...');
-                    return; // Нельзя кликать, пока спит
+                    return; 
                 }
                 this.candies += this.clickPower;
                 this.updateUI();
@@ -239,7 +260,6 @@
 
                 this.inventory.forEach(id => {
                     const item = this.shopItems[id];
-                    // Рисуем предмет, только если он принадлежит текущей комнате
                     if(item && item.room === currentRoomName) {
                         const div = document.createElement('div');
                         div.className = 'placed-item';
@@ -370,7 +390,9 @@
                     clearInterval(partyInterval);
                     this.partyActive = false;
                     this.clickPower = 1;
-                    this.applyTheme(this.theme);
+                    
+                    // Возвращаем цвета в зависимости от комнаты
+                    this.updateRoomUI(); 
                     
                     document.querySelectorAll('.placed-item').forEach(item => {
                         item.style.filter = `drop-shadow(0 5px 10px rgba(0,0,0,0.1))`;
@@ -401,25 +423,28 @@
                 const body = document.body.style; const wall = document.querySelector('.wall').style; const floor = document.querySelector('.floor').style;
                 wall.boxShadow = "none";
                 
-                if(t === 'theme-pink') {
-                    body.background = "#ffeaef"; wall.background = "#ffc2d1"; floor.background = "#fb6f92";
-                    floor.borderTop = "4px solid rgba(0,0,0,0.05)";
-                } else if(t === 'theme-dark') {
-                    body.background = "#0b0f19"; wall.background = "#141b2d"; floor.background = "#1f2940";
-                    floor.borderTop = "4px solid #0b0f19";
-                } else if(t === 'theme-neon') {
-                    body.background = "#000000"; wall.background = "#050505"; floor.background = "#0a0a0a";
-                    floor.borderTop = "4px solid #39ff14";
-                    wall.boxShadow = "inset 0 -15px 30px rgba(57, 255, 20, 0.15)";
-                } else if(t === 'theme-ocean') {
-                    body.background = "#e0f7fa"; wall.background = "#b2ebf2"; floor.background = "#4dd0e1";
-                    floor.borderTop = "4px solid rgba(0,0,0,0.05)";
-                } else if(t === 'theme-forest') {
-                    body.background = "#e8f5e9"; wall.background = "#c8e6c9"; floor.background = "#81c784";
-                    floor.borderTop = "4px solid rgba(0,0,0,0.05)";
-                } else if(t === 'theme-sunset') {
-                    body.background = "#fff3e0"; wall.background = "#ffe0b2"; floor.background = "#ffb74d";
-                    floor.borderTop = "4px solid rgba(0,0,0,0.05)";
+                // Тема применяется только если мы в спальне (индекс 1)
+                if (this.currentRoomIndex === 1) {
+                    if(t === 'theme-pink') {
+                        body.background = "#ffeaef"; wall.background = "#ffc2d1"; floor.background = "#fb6f92";
+                        floor.borderTop = "4px solid rgba(0,0,0,0.05)";
+                    } else if(t === 'theme-dark') {
+                        body.background = "#0b0f19"; wall.background = "#141b2d"; floor.background = "#1f2940";
+                        floor.borderTop = "4px solid #0b0f19";
+                    } else if(t === 'theme-neon') {
+                        body.background = "#000000"; wall.background = "#050505"; floor.background = "#0a0a0a";
+                        floor.borderTop = "4px solid #39ff14";
+                        wall.boxShadow = "inset 0 -15px 30px rgba(57, 255, 20, 0.15)";
+                    } else if(t === 'theme-ocean') {
+                        body.background = "#e0f7fa"; wall.background = "#b2ebf2"; floor.background = "#4dd0e1";
+                        floor.borderTop = "4px solid rgba(0,0,0,0.05)";
+                    } else if(t === 'theme-forest') {
+                        body.background = "#e8f5e9"; wall.background = "#c8e6c9"; floor.background = "#81c784";
+                        floor.borderTop = "4px solid rgba(0,0,0,0.05)";
+                    } else if(t === 'theme-sunset') {
+                        body.background = "#fff3e0"; wall.background = "#ffe0b2"; floor.background = "#ffb74d";
+                        floor.borderTop = "4px solid rgba(0,0,0,0.05)";
+                    }
                 }
                 this.updateUI();
             },
@@ -463,7 +488,6 @@
             },
 
             openShop() {
-                // Обновленный магазин показывает товары только для текущей комнаты
                 document.getElementById('modal-title').innerText = `Магазин (${this.roomNames[this.currentRoomIndex]})`;
                 let html = '<div class="grid">';
                 
