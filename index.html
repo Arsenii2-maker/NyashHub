@@ -69,7 +69,6 @@
         #hammock-player { position: absolute; bottom: 10px; left: 50%; width: 60px; height: 40px; font-size: 40px; transform: translateX(-50%); text-align: center; line-height: 40px; }
         .falling-item { position: absolute; font-size: 25px; top: -30px; }
         
-        /* Исправленный класс для бассейна */
         .pool-spot { position: absolute; width: 50px; height: 50px; background: rgba(255,255,255,0.3); border: 4px dashed white; border-radius: 50%; cursor: pointer; transform: translate(-50%, -50%); transition: 0.2s; display: flex; align-items: center; justify-content: center; font-size: 24px; color: transparent; }
         .pool-spot:hover { background: rgba(255,255,255,0.7); transform: translate(-50%, -50%) scale(1.1); color: white; }
         
@@ -81,8 +80,10 @@
         .delivery-box { position: absolute; font-size: 60px; z-index: 6; cursor: pointer; animation: float 2s infinite ease-in-out; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.2)); bottom: 30%; left: 20%; pointer-events: auto;}
 
         #excursion-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; padding: 15px 30px; font-size: 20px; font-weight: bold; background: #ff4757; color: white; border: none; border-radius: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: none; cursor: pointer;}
-        #excursion-interaction { position: absolute; top: 40%; left: 50%; transform: translateX(-50%); font-size: 80px; z-index: 10; cursor: pointer; animation: float 2s infinite ease-in-out; display: none; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.2)); }
-        #excursion-interaction:active { transform: translateX(-50%) scale(0.9); }
+        
+        #exc-interactions { position: absolute; top: 40%; left: 50%; transform: translateX(-50%); z-index: 10; display: none; gap: 40px; }
+        .exc-item { font-size: 70px; cursor: pointer; animation: float 2s infinite ease-in-out; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.2)); transition: 0.1s;}
+        .exc-item:active { transform: scale(0.9); }
 
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } }
@@ -104,7 +105,10 @@
         <div id="furniture-layer"></div>
         <div id="delivery-layer"></div>
 
-        <div id="excursion-interaction" onclick="game.startExcursionMG()"></div>
+        <div id="exc-interactions">
+            <div class="exc-item" id="exc-1"></div>
+            <div class="exc-item" id="exc-2"></div>
+        </div>
 
         <div id="pet-container" onclick="game.clickPet()">
             <div class="pet-wrapper">
@@ -147,13 +151,12 @@
         const game = {
             candies: parseInt(localStorage.getItem('nhub_candies')) || 0,
             energy: localStorage.getItem('nhub_energy') !== null ? parseInt(localStorage.getItem('nhub_energy')) : 100,
-            maxEnergy: 100,
             
             pet: localStorage.getItem('nhub_pet') || '🤖',
             inventory: safeLoad('nhub_inv', []),
             theme: localStorage.getItem('nhub_theme') || 'theme-pink',
             
-            foods: safeLoad('nhub_foods', { apple: 0, drink: 0, cake: 0, pie: 0, burger: 0, pizza: 0 }),
+            foods: safeLoad('nhub_foods', { apple: 0, drink: 0, cake: 0, pie: 0, burger: 0, pizza: 0, berry: 0 }),
             gardenState: parseInt(localStorage.getItem('nhub_garden')) || 0,
             
             unlockedClothes: safeLoad('nhub_clothes', []),
@@ -180,34 +183,34 @@
             currentRoomIndex: 1,
             
             isSleeping: false,
-            currentExcursion: null, // null, 'park', 'beach', 'amusement'
+            currentExcursion: null,
             activeDelivery: safeLoad('nhub_delivery', null),
-
-            // Музыкальный плеер встроенный в игру
             audioPlayer: new Audio(),
 
             shopItems: {
-                // СПАЛЬНЯ (Скорректированы координаты, чтобы не было наложения)
-                'wardrobe': { room: 'bedroom', name: 'Шкаф', price: 10, emoji: '👗', top: '48%', left: '5%', action: () => game.openWardrobe() },
+                // СПАЛЬНЯ (Координаты переработаны)
+                'wardrobe': { room: 'bedroom', name: 'Шкаф', price: 10, emoji: '👗', top: '25%', left: '15%', action: () => game.openWardrobe() },
                 'diary': { room: 'bedroom', name: 'Дневник', price: 20, emoji: '📔', top: '58%', left: '30%', action: () => game.openDiary() },
-                'phone': { room: 'bedroom', name: 'Смартфон', price: 60, emoji: '📱', top: '45%', left: '15%', action: () => game.openPhone() },
-                'pc': { room: 'bedroom', name: 'ПК', price: 50, emoji: '🖥️', top: '45%', left: '65%', action: () => { if(game.consumeEnergy(10)) game.openPCGame() } },
+                'phone': { room: 'bedroom', name: 'Смартфон', price: 60, emoji: '📱', top: '65%', left: '60%', action: () => game.openPhone() },
+                'pc': { room: 'bedroom', name: 'ПК', price: 50, emoji: '🖥️', top: '45%', left: '75%', action: () => { if(game.consumeEnergy(10)) game.openPCGame() } },
                 'bed': { room: 'bedroom', name: 'Кровать', price: 15, emoji: '🛏️', top: '60%', left: '5%', action: () => game.toggleSleep() },
-                'lamp': { room: 'bedroom', name: 'Лампа', price: 10, emoji: '💡', top: '25%', left: '15%', action: () => { if(game.consumeEnergy(15)) game.startParty() } },
+                'lamp': { room: 'bedroom', name: 'Лампа', price: 10, emoji: '💡', top: '20%', left: '35%', action: () => { if(game.consumeEnergy(15)) game.startParty() } },
                 'plant': { room: 'bedroom', name: 'Цветок', price: 5, emoji: '🪴', top: '65%', left: '80%', action: () => { if(game.consumeEnergy(5)) game.waterPlant() } },
-                'boombox': { room: 'bedroom', name: 'Музыка', price: 40, emoji: '📻', top: '25%', left: '45%', action: () => game.openMusicPlayer() },
-                'oracle': { room: 'bedroom', name: 'Оракул', price: 70, emoji: '🔮', top: '45%', left: '85%', action: () => game.useOracle() },
+                'boombox': { room: 'bedroom', name: 'Музыка', price: 40, emoji: '📻', top: '20%', left: '60%', action: () => game.openMusicPlayer() },
+                'oracle': { room: 'bedroom', name: 'Оракул', price: 70, emoji: '🔮', top: '25%', left: '80%', action: () => game.useOracle() },
                 
                 // ДВОР
                 'hammock': { room: 'yard', name: 'Гамак', price: 20, emoji: '🛶', top: '45%', left: '15%', action: () => game.openHammockMG() },
                 'doghouse': { room: 'yard', name: 'Будка', price: 30, emoji: '🛖', top: '55%', left: '75%', action: () => game.openDoghouse() },
                 'garden': { room: 'yard', name: 'Грядка', price: 40, emoji: '🌱', top: '68%', left: '20%', action: () => game.interactGarden() },
                 'pool': { room: 'yard', name: 'Бассейн', price: 100, emoji: '🏊', top: '65%', left: '75%', action: () => game.openPoolMG() },
+                'telescope': { room: 'yard', name: 'Звезды', price: 60, emoji: '🔭', top: '30%', left: '50%', action: () => game.useTelescope() },
 
                 // КУХНЯ
                 'fridge': { room: 'kitchen', name: 'Холод-к', price: 25, emoji: '🧊', top: '38%', left: '15%', action: () => game.openFridge() },
                 'stove': { room: 'kitchen', name: 'Плита', price: 35, emoji: '♨️', top: '48%', left: '70%', action: () => game.openStoveMG() },
-                'bowl': { room: 'kitchen', name: 'Миска', price: 15, emoji: '🥣', top: '75%', left: '25%', action: () => game.openBowl() }
+                'bowl': { room: 'kitchen', name: 'Миска', price: 15, emoji: '🥣', top: '75%', left: '25%', action: () => game.openBowl() },
+                'blender': { room: 'kitchen', name: 'Блендер', price: 40, emoji: '🥤', top: '48%', left: '40%', action: () => game.useBlender() }
             },
 
             petList: ['🤖', '🐱', '🐶', '🐹', '🐰', '🦊', '🦄', '🐲', '👽', '👻'],
@@ -238,38 +241,47 @@
             updateRoomUI() {
                 const body = document.body.style; const wall = document.querySelector('.wall').style; const floor = document.querySelector('.floor').style;
                 const title = document.getElementById('room-title');
-                const interactBtn = document.getElementById('excursion-interaction');
+                const interactGroup = document.getElementById('exc-interactions');
+                const btn1 = document.getElementById('exc-1');
+                const btn2 = document.getElementById('exc-2');
                 
                 if (this.currentExcursion) {
                     document.getElementById('nav-left').style.display = 'none'; document.getElementById('nav-right').style.display = 'none';
                     document.getElementById('furniture-layer').style.display = 'none'; document.getElementById('excursion-btn').style.display = 'block';
-                    interactBtn.style.display = 'block';
-                    document.getElementById('delivery-layer').innerHTML = ''; // Прячем доставку на улице
+                    interactGroup.style.display = 'flex';
+                    document.getElementById('delivery-layer').innerHTML = ''; 
                     
                     if (this.currentExcursion === 'park') {
-                        title.innerText = '🌲 Природный парк'; interactBtn.innerText = '🍄';
+                        title.innerText = '🌲 Природный парк'; 
+                        btn1.innerText = '🍄'; btn1.onclick = () => this.startMushroomForest();
+                        btn2.innerText = '🐰'; btn2.onclick = () => this.startThimbles();
                         body.background = "#81c784"; wall.background = "#aed581"; floor.background = "#689f38"; wall.boxShadow = "none";
                     } else if (this.currentExcursion === 'beach') {
-                        title.innerText = '🏖️ Пляж'; interactBtn.innerText = '🏰';
+                        title.innerText = '🏖️ Пляж'; 
+                        btn1.innerText = '🏰'; btn1.onclick = () => this.startBeachCastle();
+                        btn2.innerText = '🐬'; btn2.onclick = () => this.startDolphin();
                         body.background = "#4fc3f7"; wall.background = "#81d4fa"; floor.background = "#ffe082"; floor.borderTop = "4px solid #ffca28"; wall.boxShadow = "none";
                     } else if (this.currentExcursion === 'amusement') {
-                        title.innerText = '🎡 Аттракционы'; interactBtn.innerText = '🎪';
+                        title.innerText = '🎡 Аттракционы'; 
+                        btn1.innerText = '🎯'; btn1.onclick = () => this.startAmusementTarget();
+                        btn2.innerText = '🕹️'; btn2.onclick = () => this.startClawMachine();
                         body.background = "#ce93d8"; wall.background = "#e1bee7"; floor.background = "#ab47bc"; floor.borderTop = "4px solid #8e24aa"; wall.boxShadow = "none";
                     }
                 } else {
                     document.getElementById('furniture-layer').style.display = 'block'; document.getElementById('excursion-btn').style.display = 'none';
-                    interactBtn.style.display = 'none';
+                    interactGroup.style.display = 'none';
                     title.innerText = this.roomNames[this.currentRoomIndex];
                     document.getElementById('nav-left').style.display = this.currentRoomIndex === 0 ? 'none' : 'block';
                     document.getElementById('nav-right').style.display = this.currentRoomIndex === 2 ? 'none' : 'block';
                     
                     if (this.currentRoomIndex === 0) {
                         body.background = "#87CEEB"; wall.background = "#87CEEB"; floor.background = "#7CFC00"; floor.borderTop = "4px solid #32CD32"; wall.boxShadow = "none";
-                        this.renderDeliveryBox(); // Если мы вернулись во двор, проверяем коробку
+                        this.renderDeliveryBox();
                     } else if (this.currentRoomIndex === 2) {
                         body.background = "#FFFACD"; wall.background = "#FFFACD"; floor.background = "#F4A460"; floor.borderTop = "4px solid #D2691E"; wall.boxShadow = "none";
                         document.getElementById('delivery-layer').innerHTML = '';
                     } else {
+                        // ПРИНУДИТЕЛЬНЫЙ ВОЗВРАТ ТЕМЫ В СПАЛЬНЕ
                         this.applyTheme(this.theme);
                         document.getElementById('delivery-layer').innerHTML = '';
                     }
@@ -325,132 +337,150 @@
                 });
             },
 
-            // ==========================================
-            // ТЕЛЕФОН И ПРИЛОЖЕНИЯ
-            // ==========================================
             openPhone() {
                 document.getElementById('modal-title').innerText = "12:00 🔋 100%"; document.getElementById('modal-container').classList.add('phone-bg'); document.getElementById('modal-header').classList.add('phone-header');
-                document.getElementById('modal-body').innerHTML = `
-                    <div class="grid" style="gap: 20px;">
-                        <div class="app-icon" style="background: #ff9f43; color: white;" onclick="game.openNyashEats()"><span>🍔</span> NyashEats</div>
-                        <div class="app-icon" style="background: #feca57;" onclick="game.openNyashGo()"><span>🚕</span> NyashGo</div>
-                        <div class="app-icon" style="background: #ff6b6b; color: white;" onclick="game.openMarket()"><span>📦</span> MarketPlace</div>
-                        <div class="app-icon" style="background: #48dbfb;" onclick="game.openNyashgram()"><span>💬</span> NyashGram</div>
-                    </div>
-                `;
+                document.getElementById('modal-body').innerHTML = `<div class="grid" style="gap: 20px;"><div class="app-icon" style="background: #ff9f43; color: white;" onclick="game.openNyashEats()"><span>🍔</span> NyashEats</div><div class="app-icon" style="background: #feca57;" onclick="game.openNyashGo()"><span>🚕</span> NyashGo</div><div class="app-icon" style="background: #ff6b6b; color: white;" onclick="game.openMarket()"><span>📦</span> MarketPlace</div><div class="app-icon" style="background: #48dbfb;" onclick="game.openNyashgram()"><span>💬</span> NyashGram</div></div>`;
                 document.getElementById('modal').classList.remove('hidden');
             },
-
             closePhoneStyles() { document.getElementById('modal-container').classList.remove('phone-bg'); document.getElementById('modal-header').classList.remove('phone-header'); },
 
-            // NyashEats
             openNyashEats() {
                 document.getElementById('modal-title').innerText = "🍔 NyashEats";
-                if (this.activeDelivery && !this.activeDelivery.isSpawned) {
-                    document.getElementById('modal-body').innerHTML = `<div style="text-align:center; padding: 20px;"><div style="font-size: 50px; margin-bottom: 10px;">🛵</div><b>Курьер в пути!</b><br><small>Ждите посылку во Дворе.</small></div>`; return;
-                } else if (this.activeDelivery && this.activeDelivery.isSpawned) {
-                    document.getElementById('modal-body').innerHTML = `<div style="text-align:center; padding: 20px;"><b>Заказ уже доставлен!</b><br><small>Заберите коробку во Дворе.</small></div>`; return;
-                }
-                document.getElementById('modal-body').innerHTML = `
-                    <div style="text-align:center; margin-bottom: 15px;">Доставка премиум-еды!</div>
-                    <div class="grid">
-                        <div class="card" onclick="game.orderFood('burger', 15)"><div style="font-size:35px">🍔</div><b>Бургер</b><br><small>15 🍬 (+120⚡)</small></div>
-                        <div class="card" onclick="game.orderFood('pizza', 30)"><div style="font-size:35px">🍕</div><b>Пицца</b><br><small>30 🍬 (+Max⚡)</small></div>
-                    </div>
-                `;
+                if (this.activeDelivery && !this.activeDelivery.isSpawned) { document.getElementById('modal-body').innerHTML = `<div style="text-align:center; padding: 20px;"><div style="font-size: 50px; margin-bottom: 10px;">🛵</div><b>Курьер в пути!</b><br><small>Ждите посылку во Дворе.</small></div>`; return; } 
+                else if (this.activeDelivery && this.activeDelivery.isSpawned) { document.getElementById('modal-body').innerHTML = `<div style="text-align:center; padding: 20px;"><b>Заказ уже доставлен!</b><br><small>Заберите коробку во Дворе.</small></div>`; return; }
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; margin-bottom: 15px;">Доставка премиум-еды!</div><div class="grid"><div class="card" onclick="game.orderFood('burger', 15)"><div style="font-size:35px">🍔</div><b>Бургер</b><br><small>15 🍬 (+120⚡)</small></div><div class="card" onclick="game.orderFood('pizza', 30)"><div style="font-size:35px">🍕</div><b>Пицца</b><br><small>30 🍬 (200⚡ MAX!)</small></div></div>`;
             },
             orderFood(type, price) {
-                if (this.candies >= price) {
-                    this.candies -= price; this.activeDelivery = { type: type, timeReady: Date.now() + 15000, isSpawned: false };
-                    localStorage.setItem('nhub_delivery', JSON.stringify(this.activeDelivery)); this.updateUI();
-                    this.customAlert('Заказ принят!', 'Курьер выехал. Посылка появится во Дворе через 15 секунд! 📦');
-                } else { this.customAlert('Ошибка', 'Не хватает конфет! 🍬'); }
+                if (this.candies >= price) { this.candies -= price; this.activeDelivery = { type: type, timeReady: Date.now() + 15000, isSpawned: false }; localStorage.setItem('nhub_delivery', JSON.stringify(this.activeDelivery)); this.updateUI(); this.customAlert('Заказ принят!', 'Курьер выехал. Посылка появится во Дворе через 15 секунд! 📦'); } 
+                else { this.customAlert('Ошибка', 'Не хватает конфет! 🍬'); }
             },
             checkDelivery() {
                 if (!this.activeDelivery) return;
-                if (Date.now() >= this.activeDelivery.timeReady && !this.activeDelivery.isSpawned) {
-                    this.activeDelivery.isSpawned = true; localStorage.setItem('nhub_delivery', JSON.stringify(this.activeDelivery));
-                    if (this.currentRoomIndex === 0 && !this.currentExcursion) this.renderDeliveryBox();
-                }
+                if (Date.now() >= this.activeDelivery.timeReady && !this.activeDelivery.isSpawned) { this.activeDelivery.isSpawned = true; localStorage.setItem('nhub_delivery', JSON.stringify(this.activeDelivery)); if (this.currentRoomIndex === 0 && !this.currentExcursion) this.renderDeliveryBox(); }
             },
             renderDeliveryBox() {
                 const layer = document.getElementById('delivery-layer'); layer.innerHTML = '';
                 if (this.activeDelivery && this.activeDelivery.isSpawned && this.currentRoomIndex === 0 && !this.currentExcursion) {
                     const box = document.createElement('div'); box.className = 'delivery-box'; box.innerText = '📦';
-                    box.onclick = () => {
-                        this.foods[this.activeDelivery.type] = (this.foods[this.activeDelivery.type] || 0) + 1;
-                        this.showFloatingText(`+1 ${this.activeDelivery.type === 'burger' ? '🍔' : '🍕'}`);
-                        this.activeDelivery = null; localStorage.removeItem('nhub_delivery'); layer.innerHTML = ''; this.updateUI();
-                    };
-                    layer.appendChild(box);
+                    box.onclick = () => { this.foods[this.activeDelivery.type] = (this.foods[this.activeDelivery.type] || 0) + 1; this.showFloatingText(`+1 ${this.activeDelivery.type === 'burger' ? '🍔' : '🍕'}`); this.activeDelivery = null; localStorage.removeItem('nhub_delivery'); layer.innerHTML = ''; this.updateUI(); }; layer.appendChild(box);
                 }
             },
 
-            // NyashGo
             openNyashGo() {
                 document.getElementById('modal-title').innerText = "🚕 NyashGo";
-                document.getElementById('modal-body').innerHTML = `
-                    <div style="text-align:center; margin-bottom: 15px;">Куда поедем? (Клики дают x2 конфет!)</div>
-                    <div class="grid">
-                        <div class="card" onclick="game.travelTo('park', 20)"><div style="font-size:35px">🌲</div><b>Природа</b><br><small>20 🍬</small></div>
-                        <div class="card" onclick="game.travelTo('beach', 30)"><div style="font-size:35px">🏖️</div><b>Пляж</b><br><small>30 🍬</small></div>
-                        <div class="card" style="grid-column: span 2;" onclick="game.travelTo('amusement', 40)"><div style="font-size:35px">🎡</div><b>Парк Аттракционов</b><br><small>40 🍬</small></div>
-                    </div>
-                `;
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; margin-bottom: 15px;">Куда поедем? (Клики дают x2 конфет!)</div><div class="grid"><div class="card" onclick="game.travelTo('park', 20)"><div style="font-size:35px">🌲</div><b>Природа</b><br><small>20 🍬</small></div><div class="card" onclick="game.travelTo('beach', 30)"><div style="font-size:35px">🏖️</div><b>Пляж</b><br><small>30 🍬</small></div><div class="card" style="grid-column: span 2;" onclick="game.travelTo('amusement', 40)"><div style="font-size:35px">🎡</div><b>Парк Аттракционов</b><br><small>40 🍬</small></div></div>`;
             },
             travelTo(location, price) {
-                if (this.candies >= price) {
-                    this.candies -= price; this.updateUI(); this.close();
-                    const car = document.createElement('div'); car.innerText = '🚕'; car.style.position = 'absolute'; car.style.fontSize = '80px'; car.style.top = '50%'; car.style.zIndex = '200'; car.style.animation = 'drive 2s linear forwards';
-                    document.body.appendChild(car);
-                    setTimeout(() => { this.currentExcursion = location; this.updateRoomUI(); car.remove(); }, 1000);
-                } else { this.customAlert('Ошибка', 'Не хватает конфет! 🍬'); }
+                if (this.candies >= price) { this.candies -= price; this.updateUI(); this.close(); const car = document.createElement('div'); car.innerText = '🚕'; car.style.position = 'absolute'; car.style.fontSize = '80px'; car.style.top = '50%'; car.style.zIndex = '200'; car.style.animation = 'drive 2s linear forwards'; document.body.appendChild(car); setTimeout(() => { this.currentExcursion = location; this.updateRoomUI(); car.remove(); }, 1000); } 
+                else { this.customAlert('Ошибка', 'Не хватает конфет! 🍬'); }
             },
             goHome() { this.currentExcursion = null; this.updateRoomUI(); },
 
-            // Экскурсионные Мини-Игры
-            startExcursionMG() {
+            // ==========================================
+            // НОВЫЕ МИНИ-ИГРЫ
+            // ==========================================
+
+            // ПАРК 1: Лес с Грибами
+            startMushroomForest() {
                 if(!this.consumeEnergy(5)) return;
-                if(this.currentExcursion === 'park') {
-                    document.getElementById('modal-title').innerText = "Лес: Сбор грибов 🍄";
-                    document.getElementById('modal-body').innerHTML = `
-                        <div style="text-align:center; margin-bottom:15px;">Кликай по грибу, чтобы найти под ним конфеты!</div>
-                        <div id="nature-mg-item" style="font-size:80px; text-align:center; cursor:pointer; user-select:none;" onclick="game.natureMGTap()">🍄</div>
-                        <div id="nature-mg-prog" style="text-align:center; font-weight:bold; margin-top:10px;">Осталось: 5</div>
-                    `;
-                    this.mgClicks = 5; document.getElementById('modal').classList.remove('hidden');
-                } else if(this.currentExcursion === 'beach') {
-                    document.getElementById('modal-title').innerText = "Пляж: Замок 🏰";
-                    document.getElementById('modal-body').innerHTML = `
-                        <div style="text-align:center; margin-bottom:15px;">Строй замок быстро, пока волна не смыла!</div>
-                        <div id="beach-mg-item" style="font-size:80px; text-align:center; cursor:pointer; user-select:none;" onclick="game.beachMGTap()">🪣</div>
-                        <div style="width:100%; height:20px; background:#ddd; border-radius:10px; overflow:hidden; margin-top:10px;"><div id="beach-bar" style="width:0%; height:100%; background:#feca57; transition:0.1s;"></div></div>
-                    `;
-                    this.mgClicks = 0; document.getElementById('modal').classList.remove('hidden');
-                } else if(this.currentExcursion === 'amusement') {
-                    document.getElementById('modal-title').innerText = "Тир 🎯";
-                    document.getElementById('modal-body').innerHTML = `
-                        <div style="position:relative; width:100%; height:150px; background:#e1bee7; border-radius:15px; overflow:hidden;">
-                            <div id="target" style="position:absolute; top:40%; left:0; font-size:40px; cursor:pointer;" onclick="game.targetHit()">🎈</div>
-                        </div>
-                    `;
-                    document.getElementById('modal').classList.remove('hidden');
-                    let pos = 0; let dir = 1;
-                    this.mgInterval = setInterval(() => {
-                        pos += 2 * dir; if(pos > 90) dir = -1; if(pos < 0) dir = 1;
-                        const t = document.getElementById('target'); if(t) t.style.left = pos + '%';
-                    }, 20);
-                }
+                document.getElementById('modal-title').innerText = "Лес: Поиск 🍄";
+                let arr = new Array(20).fill(0); for(let i=0; i<5; i++) arr[i] = 1; arr.sort(() => Math.random() - 0.5);
+                this.mushFound = 0;
+                let html = `<div style="text-align:center; margin-bottom:10px;">Найди 5 скрытых грибов!</div><div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; font-size:40px; margin-bottom:15px;">`;
+                arr.forEach((isMush, idx) => { html += `<div id="tree-${idx}" onclick="game.clickTree(${idx}, ${isMush})" style="cursor:pointer; user-select:none; text-align:center;">🌲</div>`; });
+                html += `</div><div id="mush-count" style="text-align:center; font-weight:bold; color:#4caf50;">Найдено: 0 / 5</div>`;
+                document.getElementById('modal-body').innerHTML = html; document.getElementById('modal').classList.remove('hidden');
             },
-            natureMGTap() {
-                this.mgClicks--; document.getElementById('nature-mg-prog').innerText = `Осталось: ${this.mgClicks}`;
-                if(this.mgClicks <= 0) { this.candies += 15; this.updateUI(); this.customAlert('Ура!', 'Ты собрал все грибы и нашел 15 🍬!'); }
+            clickTree(idx, isMush) {
+                let el = document.getElementById(`tree-${idx}`);
+                if(el.innerText !== '🌲') return;
+                if(isMush) { el.innerText = '🍄'; this.mushFound++; document.getElementById('mush-count').innerText = `Найдено: ${this.mushFound} / 5`; if(this.mushFound >= 5) { this.candies += 25; this.updateUI(); setTimeout(()=>this.customAlert('Отлично!', 'Ты нашел все грибы в лесу! +25 🍬'), 300); } } 
+                else { el.innerText = '🍂'; }
+            },
+
+            // ПАРК 2: Наперстки
+            startThimbles() {
+                if(!this.consumeEnergy(5)) return;
+                document.getElementById('modal-title').innerText = "Наперстки 🐰";
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; font-size:60px; margin-bottom:10px;">🐰</div><div style="text-align:center; color:#666; margin-bottom:15px;">Угадай, где спрятан шарик!</div><div style="display:flex; justify-content:space-around; font-size:60px;"><div style="cursor:pointer;" onclick="game.guessThimble(0)">🥤</div><div style="cursor:pointer;" onclick="game.guessThimble(1)">🥤</div><div style="cursor:pointer;" onclick="game.guessThimble(2)">🥤</div></div>`;
+                this.thimbleAns = Math.floor(Math.random() * 3); document.getElementById('modal').classList.remove('hidden');
+            },
+            guessThimble(choice) {
+                if(choice === this.thimbleAns) { this.foods['berry'] = (this.foods['berry']||0) + 1; this.updateUI(); this.customAlert('Победа!', 'Ты угадал! Зайчик подарил тебе Ягоды 🫐!'); } 
+                else { this.customAlert('Упс!', 'Пусто! Шарик был в другом стакане.'); }
+            },
+
+            // ПЛЯЖ 1: Замок с волной
+            startBeachCastle() {
+                if(!this.consumeEnergy(5)) return;
+                document.getElementById('modal-title').innerText = "Пляж: Замок 🏰";
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; margin-bottom:15px;">Строй быстро! Остерегайся волн!</div><div id="beach-mg-item" style="font-size:80px; text-align:center; cursor:pointer; user-select:none; transition:0.2s;" onclick="game.beachMGTap()">🪣</div><div style="width:100%; height:20px; background:#ddd; border-radius:10px; overflow:hidden; margin-top:10px;"><div id="beach-bar" style="width:0%; height:100%; background:#feca57; transition:0.1s;"></div></div>`;
+                this.mgClicks = 0; document.getElementById('modal').classList.remove('hidden');
+                this.mgInterval = setInterval(() => {
+                    if(Math.random() < 0.15) { 
+                        this.mgClicks = Math.max(0, this.mgClicks - 30); document.getElementById('beach-bar').style.width = this.mgClicks + '%'; 
+                        let bItem = document.getElementById('beach-mg-item'); bItem.innerText = '🌊'; setTimeout(() => { if(bItem) bItem.innerText = '🪣'; }, 500);
+                    }
+                }, 1000);
             },
             beachMGTap() {
                 this.mgClicks += 10; document.getElementById('beach-bar').style.width = this.mgClicks + '%';
-                if(this.mgClicks >= 100) { this.candies += 20; this.updateUI(); this.customAlert('Шедевр!', 'Замок построен! В песке было 20 🍬!'); }
+                if(this.mgClicks >= 100) { this.clearMinigames(); this.candies += 20; this.updateUI(); this.customAlert('Шедевр!', 'Замок построен! В песке было 20 🍬!'); }
             },
-            targetHit() { this.candies += 25; this.updateUI(); this.customAlert('В яблочко!', 'Меткий выстрел! Приз: 25 🍬!'); },
+
+            // ПЛЯЖ 2: Игра с Дельфином
+            startDolphin() {
+                if(!this.consumeEnergy(5)) return;
+                document.getElementById('modal-title').innerText = "Мяч с Дельфином 🐬";
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; font-size:50px;">🐬</div><div id="dolphin-score" style="text-align:center; font-weight:bold; margin-bottom:10px;">Отбито: 0 / 5</div><div style="position:relative; width:100%; height:200px; background:#4fc3f7; border-radius:10px; overflow:hidden; border:3px solid #0288d1;"><div id="d-ball" style="position:absolute; top:0; left:50%; transform:translateX(-50%); font-size:40px; cursor:pointer;" onclick="game.hitDolphinBall()">⚽</div></div>`;
+                document.getElementById('modal').classList.remove('hidden');
+                this.dolphinScore = 0; this.dBallY = 0;
+                this.mgInterval = setInterval(() => {
+                    this.dBallY += 4; let b = document.getElementById('d-ball');
+                    if(b) { b.style.top = this.dBallY + 'px'; if(this.dBallY > 180) { this.clearMinigames(); this.customAlert('Проигрыш', 'Мяч упал в воду! 💦'); } }
+                }, 30);
+            },
+            hitDolphinBall() {
+                this.dolphinScore++; document.getElementById('dolphin-score').innerText = `Отбито: ${this.dolphinScore} / 5`; this.dBallY = 0;
+                let b = document.getElementById('d-ball'); if(b) { b.style.left = (Math.random() * 80 + 10) + '%'; }
+                if(this.dolphinScore >= 5) { this.clearMinigames(); this.candies += 20; this.updateUI(); this.customAlert('Ура!', 'Отличная игра с дельфином! +20 🍬'); }
+            },
+
+            // АТТРАКЦИОНЫ 1: Тир
+            startAmusementTarget() {
+                if(!this.consumeEnergy(5)) return;
+                document.getElementById('modal-title').innerText = "Тир 🎯";
+                document.getElementById('modal-body').innerHTML = `<div style="position:relative; width:100%; height:150px; background:#e1bee7; border-radius:15px; overflow:hidden;"><div id="target" style="position:absolute; top:40%; left:0; font-size:40px; cursor:pointer;" onclick="game.targetHit()">🎈</div></div>`;
+                document.getElementById('modal').classList.remove('hidden');
+                let pos = 0; let dir = 1;
+                this.mgInterval = setInterval(() => { pos += 2 * dir; if(pos > 90) dir = -1; if(pos < 0) dir = 1; const t = document.getElementById('target'); if(t) t.style.left = pos + '%'; }, 20);
+            },
+            targetHit() { this.clearMinigames(); this.candies += 25; this.updateUI(); this.customAlert('В яблочко!', 'Меткий выстрел! Приз: 25 🍬!'); },
+
+            // АТТРАКЦИОНЫ 2: Хватайка
+            startClawMachine() {
+                if(this.candies < 10) { this.customAlert('Хватайка', 'Нужно 10 🍬 для запуска!'); return; }
+                if(!this.consumeEnergy(5)) return;
+                this.candies -= 10; this.updateUI();
+                document.getElementById('modal-title').innerText = "Хватайка 🕹️ (-10🍬)";
+                document.getElementById('modal-body').innerHTML = `<div style="position:relative; width:100%; height:200px; background:#f3e5f5; border:3px solid #ab47bc; border-radius:10px; overflow:hidden; margin-bottom:10px;"><div id="claw-crane" style="position:absolute; top:0; left:0; font-size:50px; transition:top 0.5s;">⛓️爪</div><div style="position:absolute; bottom:0; width:100%; text-align:center; font-size:40px; border-top:2px solid #ab47bc; padding-top:5px; background:rgba(255,255,255,0.5);">🧸 🍬 🎁 🍎</div></div><button class="mg-btn" onclick="game.dropClaw()">ХВАТАТЬ!</button>`;
+                document.getElementById('modal').classList.remove('hidden');
+                this.clawPos = 0; this.clawDir = 1; this.clawActive = true;
+                this.mgInterval = setInterval(() => { if(!this.clawActive) return; this.clawPos += 3 * this.clawDir; if(this.clawPos > 85) this.clawDir = -1; if(this.clawPos < 0) this.clawDir = 1; let c = document.getElementById('claw-crane'); if(c) c.style.left = this.clawPos + '%'; }, 30);
+            },
+            dropClaw() {
+                if(!this.clawActive) return; this.clawActive = false; let c = document.getElementById('claw-crane'); c.style.top = '120px';
+                setTimeout(() => {
+                    c.style.top = '0px';
+                    setTimeout(() => {
+                        this.clearMinigames(); let r = Math.random();
+                        if(r < 0.4) this.customAlert('Хватайка', 'Пусто! Ничего не поймали 😢');
+                        else if(r < 0.7) { this.candies += 20; this.updateUI(); this.customAlert('Хватайка', 'Ура! Ты вытащил 20 🍬!'); }
+                        else if(r < 0.9) { this.foods['apple'] = (this.foods['apple']||0)+1; this.customAlert('Хватайка', 'Ты вытащил Яблоко 🍎!'); }
+                        else { this.foods['cake'] = (this.foods['cake']||0)+1; this.customAlert('Хватайка', 'Ого! Торт 🍰 твой!'); }
+                    }, 500);
+                }, 500);
+            },
 
             // MarketPlace & NyashGram
             openMarket() {
@@ -465,11 +495,7 @@
             },
             buyPremiumCloth(id) {
                 if (this.unlockedClothes.includes(id)) { this.currentCloth = id; this.updateUI(); this.customAlert('MarketPlace', 'Скин надет! 🤩'); } 
-                else {
-                    const item = this.clothesData[id];
-                    if (this.candies >= item.price) { this.candies -= item.price; this.unlockedClothes.push(id); this.currentCloth = id; this.updateUI(); this.customAlert('Успех!', 'Костюм доставлен и надет! 📦'); } 
-                    else { this.customAlert('MarketPlace', 'Не хватает конфет! 🍬'); }
-                }
+                else { const item = this.clothesData[id]; if (this.candies >= item.price) { this.candies -= item.price; this.unlockedClothes.push(id); this.currentCloth = id; this.updateUI(); this.customAlert('Успех!', 'Костюм доставлен и надет! 📦'); } else { this.customAlert('MarketPlace', 'Не хватает конфет! 🍬'); } }
             },
             openNyashgram() {
                 document.getElementById('modal-title').innerText = "💬 Nyashgram";
@@ -477,62 +503,49 @@
                 const shuffled = msgs.sort(() => 0.5 - Math.random()).slice(0, 3);
                 let html = `<div style="height: 300px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;">`;
                 shuffled.forEach(msg => { html += `<div class="chat-msg bot"><b>${msg.sender}</b><br>${msg.text} ${msg.reward ? `<br><div class="chat-reward" onclick="game.claimReward(this, ${msg.reward})">Забрать +${msg.reward} 🍬</div>` : ''} ${msg.canTip ? `<br><div class="chat-action" onclick="game.tipBot('${msg.sender}')">Отправить 5 🍬</div>` : ''}</div>`; });
-                html += `<div class="chat-msg" style="align-self: flex-end; background: #e3f2fd; border: 1px solid #bbdefb;"><b>Ты</b><br>Отлично! 😎</div></div>`;
-                document.getElementById('modal-body').innerHTML = html;
+                html += `<div class="chat-msg" style="align-self: flex-end; background: #e3f2fd; border: 1px solid #bbdefb;"><b>Ты</b><br>Отлично! 😎</div></div>`; document.getElementById('modal-body').innerHTML = html;
             },
-            tipBot(botName) {
-                if (this.candies >= 5) { this.candies -= 5; this.updateUI(); this.showFloatingText('-5 🍬'); this.customAlert('Отправлено!', `${botName} говорит тебе большое спасибо! ❤️`); } 
-                else { this.customAlert('Ой', 'У тебя нет столько конфет! 🍬'); }
+            tipBot(botName) { if (this.candies >= 5) { this.candies -= 5; this.updateUI(); this.showFloatingText('-5 🍬'); this.customAlert('Отправлено!', `${botName} говорит тебе большое спасибо! ❤️`); } else { this.customAlert('Ой', 'У тебя нет столько конфет! 🍬'); } },
+
+            // Новые предметы (Блендер и Телескоп)
+            useTelescope() {
+                if(!this.consumeEnergy(5)) return;
+                if(Math.random() > 0.5) { this.candies += 10; this.updateUI(); this.customAlert('Телескоп 🔭', 'Ты увидел падающую звезду и загадал желание! Упало 10 🍬.'); }
+                else { this.customAlert('Телескоп 🔭', 'Красивое звездное небо... ✨'); }
+            },
+            useBlender() {
+                document.getElementById('modal-title').innerText = "Блендер 🥤";
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center;">Сделай Смузи (+40⚡)!<br><br>Нужно: 1 🍎 и 1 🫐<br>У тебя: ${this.foods['apple']||0} 🍎 и ${this.foods['berry']||0} 🫐</div><button class="mg-btn" onclick="game.craftSmoothie()">Смешать!</button>`;
+                document.getElementById('modal').classList.remove('hidden');
+            },
+            craftSmoothie() {
+                if((this.foods['apple']||0) >= 1 && (this.foods['berry']||0) >= 1) {
+                    this.foods['apple']--; this.foods['berry']--; this.foods['drink'] = (this.foods['drink']||0) + 1; this.updateUI(); this.customAlert('Блендер', 'Готово! Смузи (в виде Энергетика 🥫) добавлено в Миску!');
+                } else { this.customAlert('Блендер', 'Не хватает ингредиентов!'); }
             },
 
             // Оракул и Плеер
-            useOracle() {
-                if(!this.consumeEnergy(5)) return;
-                const p = ["Скоро ты найдешь много конфет... 🍬", "Берегись сгоревших пирогов на кухне! 🔥", "Твой питомец мечтает о костюме космонавта 👨‍🚀", "Если часто гладить песика, будет удача! 🐶"];
-                this.customAlert('Оракул 🔮', p[Math.floor(Math.random() * p.length)]);
-            },
-
+            useOracle() { if(!this.consumeEnergy(5)) return; const p = ["Скоро ты найдешь много конфет... 🍬", "Берегись сгоревших пирогов на кухне! 🔥", "Твой питомец мечтает о костюме космонавта 👨‍🚀", "Пицца - самая сильная еда в игре! 🍕"]; this.customAlert('Оракул 🔮', p[Math.floor(Math.random() * p.length)]); },
             openMusicPlayer() {
                 document.getElementById('modal-title').innerText = "Магнитофон 📻";
-                // Вставил тестовые (безопасные) ссылки, чтобы музыка РЕАЛЬНО играла.
-                // Если хочешь поставить свой трек, просто замени ссылку в 'url' на 'music/nyash_track.mp3'
-                document.getElementById('modal-body').innerHTML = `
-                    <div style="text-align:center; color:#666; margin-bottom:15px;">Выбери пластинку для фона:</div>
-                    <div class="grid">
-                        <button class="mg-btn" onclick="game.playTrack('https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3', 'Lo-Fi Chill ☕')">Lo-Fi Chill ☕</button>
-                        <button class="mg-btn" onclick="game.playTrack('https://files.freemusicarchive.org/storage-freemusicarchive-org/music/WFMU/Broke_For_Free/Directionless_EP/Broke_For_Free_-_01_-_Night_Owl.mp3', '8-bit Adventure 👾')">Indie Beat 👾</button>
-                        <button class="mg-btn" onclick="game.stopMusic()" style="background: #95a5a6;">Остановить 🔇</button>
-                        <button class="mg-btn" onclick="game.playTrack('https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Frenic/Mimesis/Frenic_-_03_-_Alright.mp3', 'NYASH Beat 🎤')" style="background: #8e44ad;">NYASH Beat 🎤</button>
-                    </div>
-                    <div id="now-playing" style="margin-top:20px; text-align:center; font-weight:bold; color:#ff6b8b;">${this.audioPlayer.src ? 'Музыка играет 🎶' : 'Ничего не играет'}</div>
-                    <div style="margin-top:10px; font-size:12px; color:#aaa; text-align:center;">(Чтобы добавить свой трек, замени ссылки в коде игры на свои .mp3)</div>
-                `;
-                document.getElementById('modal').classList.remove('hidden');
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; color:#666; margin-bottom:15px;">Выбери пластинку для фона:</div><div class="grid"><button class="mg-btn" onclick="game.playTrack('https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3', 'Lo-Fi Chill ☕')">Lo-Fi Chill ☕</button><button class="mg-btn" onclick="game.playTrack('https://files.freemusicarchive.org/storage-freemusicarchive-org/music/WFMU/Broke_For_Free/Directionless_EP/Broke_For_Free_-_01_-_Night_Owl.mp3', '8-bit Adventure 👾')">Indie Beat 👾</button><button class="mg-btn" onclick="game.stopMusic()" style="background: #95a5a6;">Остановить 🔇</button><button class="mg-btn" onclick="game.playTrack('https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Frenic/Mimesis/Frenic_-_03_-_Alright.mp3', 'NYASH Beat 🎤')" style="background: #8e44ad;">NYASH Beat 🎤</button></div><div id="now-playing" style="margin-top:20px; text-align:center; font-weight:bold; color:#ff6b8b;">${this.audioPlayer.src ? 'Музыка играет 🎶' : 'Ничего не играет'}</div>`; document.getElementById('modal').classList.remove('hidden');
             },
-
-            playTrack(url, name) {
-                this.audioPlayer.src = url; this.audioPlayer.loop = true; this.audioPlayer.play();
-                const playingText = document.getElementById('now-playing'); if (playingText) playingText.innerText = `🎶 Сейчас играет: ${name}`;
-                this.showFloatingText('🎶 Музыка включена!');
-            },
+            playTrack(url, name) { this.audioPlayer.src = url; this.audioPlayer.loop = true; this.audioPlayer.play(); const playingText = document.getElementById('now-playing'); if (playingText) playingText.innerText = `🎶 Сейчас играет: ${name}`; this.showFloatingText('🎶 Музыка включена!'); },
             stopMusic() { this.audioPlayer.pause(); this.audioPlayer.currentTime = 0; this.audioPlayer.src = ""; const p = document.getElementById('now-playing'); if(p) p.innerText = 'Ничего не играет'; },
 
-            // СТАРЫЕ ФУНКЦИИ (Мини-игры, Магазин, и т.д.)
             claimReward(element, amount) { this.candies += amount; this.updateUI(); element.style.display = 'none'; this.showFloatingText(`+${amount} 🍬`); },
             
-            openDoghouse() { /* Логика собачки без изменений... */
-                document.getElementById('modal-title').innerText = "В гостях у Песика";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; color:#666; font-weight:bold;">Зажми и води по песику, чтобы погладить!</div><div id="pet-progress-bg"><div id="pet-progress-fill"></div></div><div style="text-align:center;"><div id="dog-area">🐶</div></div>`;
-                document.getElementById('modal').classList.remove('hidden');
+            // Старые мини-игры
+            openDoghouse() { /* Логика песика без изменений */
+                document.getElementById('modal-title').innerText = "В гостях у Песика"; document.getElementById('modal-body').innerHTML = `<div style="text-align:center; color:#666; font-weight:bold;">Зажми и води по песику, чтобы погладить!</div><div id="pet-progress-bg"><div id="pet-progress-fill"></div></div><div style="text-align:center;"><div id="dog-area">🐶</div></div>`; document.getElementById('modal').classList.remove('hidden');
                 const dogArea = document.getElementById('dog-area'); this.pettingProgress = 0; let isDragging = false; let lastX = 0, lastY = 0;
                 const handleMove = (x, y) => {
                     if (!isDragging) return; const deltaX = Math.abs(x - lastX); const deltaY = Math.abs(y - lastY);
                     if (deltaX > 2 || deltaY > 2) {
                         this.pettingProgress += 1.5; document.getElementById('pet-progress-fill').style.width = Math.min(100, this.pettingProgress) + '%';
                         if (Math.random() < 0.1) { const heart = document.createElement('div'); heart.className = 'floating-heart'; heart.innerText = '❤️'; heart.style.left = (Math.random() * 80 + 10) + '%'; heart.style.top = (Math.random() * 80 + 10) + '%'; dogArea.appendChild(heart); setTimeout(() => heart.remove(), 1000); }
-                        if (this.pettingProgress >= 100) { isDragging = false; this.energy = Math.min(this.maxEnergy, this.energy + 20); this.updateUI(); this.customAlert('Хороший мальчик!', 'Песик рад! (+20 ⚡)'); }
-                    }
-                    lastX = x; lastY = y;
+                        if (this.pettingProgress >= 100) { isDragging = false; this.energy = Math.min(100, this.energy + 20); this.updateUI(); this.customAlert('Хороший мальчик!', 'Песик рад! (+20 ⚡)'); }
+                    } lastX = x; lastY = y;
                 };
                 dogArea.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; }); window.addEventListener('mouseup', () => { isDragging = false; }); dogArea.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
                 dogArea.addEventListener('touchstart', (e) => { isDragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }); window.addEventListener('touchend', () => { isDragging = false; }); dogArea.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); });
@@ -562,14 +575,7 @@
 
             openPoolMG() {
                 if(!this.consumeEnergy(10)) return; document.getElementById('modal-title').innerText = "Прыжок в бассейн (-10 ⚡)";
-                document.getElementById('modal-body').innerHTML = `
-                    <div style="text-align:center; font-size:50px; margin-bottom:10px;">${this.pet}</div>
-                    <div style="text-align:center; color:#666; margin-bottom:10px;">Выбери точку для прыжка!</div>
-                    <div style="position:relative; width:100%; height:150px; background:#4dd0e1; border-radius:20px; border:3px solid #00acc1; overflow:hidden;">
-                        <div class="pool-spot" style="top:30%; left:20%;" onclick="game.poolJump(0)">💦</div>
-                        <div class="pool-spot" style="top:60%; left:50%;" onclick="game.poolJump(1)">💦</div>
-                        <div class="pool-spot" style="top:40%; left:80%;" onclick="game.poolJump(2)">💦</div>
-                    </div>`; document.getElementById('modal').classList.remove('hidden');
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; font-size:50px; margin-bottom:10px;">${this.pet}</div><div style="text-align:center; color:#666; margin-bottom:10px;">Выбери точку для прыжка!</div><div style="position:relative; width:100%; height:150px; background:#4dd0e1; border-radius:20px; border:3px solid #00acc1; overflow:hidden;"><div class="pool-spot" style="top:30%; left:20%;" onclick="game.poolJump(0)">💦</div><div class="pool-spot" style="top:60%; left:50%;" onclick="game.poolJump(1)">💦</div><div class="pool-spot" style="top:40%; left:80%;" onclick="game.poolJump(2)">💦</div></div>`; document.getElementById('modal').classList.remove('hidden');
             },
             poolJump(spotIndex) {
                 const rewards = [ { t: 'Ого, на дне лежали конфеты! +15 🍬', action: () => { this.candies += 15; } }, { t: 'Ты выловил Энергетик! 🥫', action: () => { this.foods['drink'] = (this.foods['drink']||0) + 1; } }, { t: 'Просто веселый плюх! 💦', action: () => {} } ];
@@ -621,30 +627,32 @@
 
             openFridge() {
                 document.getElementById('modal-title').innerText = "Супермаркет (Покупка)";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; margin-bottom:10px; color:#666;">Покупай продукты. Ешь из Миски 🥣.</div><div class="grid"><div class="card" onclick="game.buyFood('apple')"><div style="font-size:35px">🍎</div><b>Яблоко</b><br><small>2 🍬 (15⚡)</small></div><div class="card" onclick="game.buyFood('drink')"><div style="font-size:35px">🥫</div><b>Энергетик</b><br><small>5 🍬 (40⚡)</small></div><div class="card" onclick="game.buyFood('cake')" style="grid-column: span 2;"><div style="font-size:35px">🍰</div><b>Торт</b><br><small>12 🍬 (100⚡)</small></div></div>`; document.getElementById('modal').classList.remove('hidden');
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; margin-bottom:10px; color:#666;">Покупай продукты. Ешь из Миски 🥣.</div><div class="grid"><div class="card" onclick="game.buyFood('apple')"><div style="font-size:35px">🍎</div><b>Яблоко</b><br><small>2 🍬 (+15⚡)</small></div><div class="card" onclick="game.buyFood('drink')"><div style="font-size:35px">🥫</div><b>Энергетик</b><br><small>5 🍬 (+40⚡)</small></div><div class="card" onclick="game.buyFood('cake')" style="grid-column: span 2;"><div style="font-size:35px">🍰</div><b>Торт</b><br><small>12 🍬 (+100⚡)</small></div></div>`; document.getElementById('modal').classList.remove('hidden');
             },
             buyFood(type) { const prices = { 'apple': 2, 'drink': 5, 'cake': 12 }; if (this.candies >= prices[type]) { this.candies -= prices[type]; this.foods[type] = (this.foods[type] || 0) + 1; this.updateUI(); this.showFloatingText('Куплено! 🛒'); } else { this.customAlert('Ошибка', 'Не хватает конфет! 🍬'); } },
 
+            // УНИКАЛЬНАЯ ЛОГИКА ЕДЫ
             openBowl() {
-                document.getElementById('modal-title').innerText = "Миска (Инвентарь еды)"; let html = `<div style="text-align:center; margin-bottom:15px; font-weight:bold; color:#ff6b8b;">Энергия: ${this.energy}/${this.maxEnergy} ⚡</div><div class="grid">`;
-                const foodData = { 'apple': { emoji: '🍎', name: 'Яблоко', restore: 15 }, 'drink': { emoji: '🥫', name: 'Энергетик', restore: 40 }, 'cake': { emoji: '🍰', name: 'Торт', restore: 100 }, 'pie': { emoji: '🥧', name: 'Пирог', restore: 50 }, 'burger': { emoji: '🍔', name: 'Бургер', restore: 120 }, 'pizza': { emoji: '🍕', name: 'Пицца', restore: 200 } };
-                let hasFood = false; for (let key in this.foods) { if (this.foods[key] > 0) { hasFood = true; html += `<div class="card" onclick="game.eatFood('${key}')"><div style="font-size:35px">${foodData[key].emoji}</div><b>${foodData[key].name}</b><br><small>В наличии: ${this.foods[key]} шт.</small><br><small style="color:#4caf50;">+${foodData[key].restore} ⚡</small></div>`; } }
+                document.getElementById('modal-title').innerText = "Миска (Инвентарь еды)"; let html = `<div style="text-align:center; margin-bottom:15px; font-weight:bold; color:#ff6b8b;">Энергия: ${this.energy}/100 ⚡ ${this.energy > 100 ? '(ПЕРЕГРУЗКА!)' : ''}</div><div class="grid">`;
+                const foodData = { 'apple': { emoji: '🍎', name: 'Яблоко', restore: '+15 ⚡' }, 'berry': { emoji: '🫐', name: 'Ягоды', restore: '+20 ⚡' }, 'drink': { emoji: '🥫', name: 'Энергетик', restore: '+40 ⚡' }, 'cake': { emoji: '🍰', name: 'Торт', restore: '+100 ⚡' }, 'pie': { emoji: '🥧', name: 'Пирог', restore: '+50 ⚡' }, 'burger': { emoji: '🍔', name: 'Бургер', restore: '+120 ⚡' }, 'pizza': { emoji: '🍕', name: 'Пицца', restore: '200 ⚡ MAX' } };
+                let hasFood = false; for (let key in this.foods) { if (this.foods[key] > 0) { hasFood = true; html += `<div class="card" onclick="game.eatFood('${key}')"><div style="font-size:35px">${foodData[key].emoji}</div><b>${foodData[key].name}</b><br><small>В наличии: ${this.foods[key]} шт.</small><br><small style="color:#4caf50;">${foodData[key].restore}</small></div>`; } }
                 if (!hasFood) html += `<div style="grid-column:span 2; text-align:center;">Тут пусто! Купи еду или приготовь на плите.</div>`; html += `</div>`; document.getElementById('modal-body').innerHTML = html; document.getElementById('modal').classList.remove('hidden');
             },
-            eatFood(type) { if (this.energy >= this.maxEnergy) { this.customAlert('Миска', 'Питомец не голоден! ⚡ на максимуме.'); return; } const restores = { 'apple': 15, 'drink': 40, 'cake': 100, 'pie': 50, 'burger': 120, 'pizza': 200 }; this.foods[type]--; this.energy = Math.min(this.maxEnergy, this.energy + restores[type]); this.updateUI(); this.showFloatingText('+⚡'); this.openBowl(); },
+            eatFood(type) { 
+                if (type === 'pizza') {
+                    this.energy = 200; // Уникальная способность пиццы
+                } else {
+                    if (this.energy >= 100) { this.customAlert('Миска', 'Энергия уже полная (100⚡)! Больше влезет только Пицца 🍕.'); return; }
+                    const restores = { 'apple': 15, 'drink': 40, 'cake': 100, 'pie': 50, 'burger': 120, 'berry': 20 }; 
+                    this.energy += restores[type];
+                    if (this.energy > 100) this.energy = 100; // Остальная еда режет лимит до 100
+                }
+                this.foods[type]--; this.updateUI(); this.showFloatingText('+⚡'); this.openBowl(); 
+            },
 
             openSettings() {
                 if (this.isSleeping) { this.showFloatingText('Zzz...'); return; } document.getElementById('modal-title').innerText = "Настройки (Темы)";
-                document.getElementById('modal-body').innerHTML = `
-                    <div class="grid">
-                        <div class="card" onclick="game.applyTheme('theme-pink')" style="background:#ffeaef; border-color:#ff8fa3;">Розовый 🌸</div>
-                        <div class="card" onclick="game.applyTheme('theme-dark')" style="background:#0b0f19; color:white; border-color:#334155;">Ночь 🌙</div>
-                        <div class="card" onclick="game.applyTheme('theme-neon')" style="background:#000; color:#39ff14; border-color:#39ff14;">Неон ⚡</div>
-                        <div class="card" onclick="game.applyTheme('theme-ocean')" style="background:#e0f7fa; color:#006064; border-color:#26c6da;">Океан 🌊</div>
-                        <div class="card" onclick="game.applyTheme('theme-forest')" style="background:#e8f5e9; color:#1b5e20; border-color:#4caf50;">Лес 🌲</div>
-                        <div class="card" onclick="game.applyTheme('theme-gold')" style="background:#fff8e1; color:#f57f17; border-color:#ffb300;">Золото ✨</div>
-                    </div>
-                `; document.getElementById('modal').classList.remove('hidden');
+                document.getElementById('modal-body').innerHTML = `<div class="grid"><div class="card" onclick="game.applyTheme('theme-pink')" style="background:#ffeaef; border-color:#ff8fa3;">Розовый 🌸</div><div class="card" onclick="game.applyTheme('theme-dark')" style="background:#0b0f19; color:white; border-color:#334155;">Ночь 🌙</div><div class="card" onclick="game.applyTheme('theme-neon')" style="background:#000; color:#39ff14; border-color:#39ff14;">Неон ⚡</div><div class="card" onclick="game.applyTheme('theme-ocean')" style="background:#e0f7fa; color:#006064; border-color:#26c6da;">Океан 🌊</div><div class="card" onclick="game.applyTheme('theme-forest')" style="background:#e8f5e9; color:#1b5e20; border-color:#4caf50;">Лес 🌲</div><div class="card" onclick="game.applyTheme('theme-gold')" style="background:#fff8e1; color:#f57f17; border-color:#ffb300;">Золото ✨</div></div>`; document.getElementById('modal').classList.remove('hidden');
             },
             applyTheme(t) {
                 this.theme = t; const body = document.body.style; const wall = document.querySelector('.wall').style; const floor = document.querySelector('.floor').style; wall.boxShadow = "none";
@@ -675,7 +683,7 @@
 
             toggleSleep() {
                 if (this.isSleeping) { this.isSleeping = false; clearInterval(this.sleepInterval); this.updatePetVisual(); this.customAlert('Пробуждение ☀️', 'Питомец проснулся!'); } 
-                else { this.isSleeping = true; this.updatePetVisual(); this.customAlert('Сон 🛏️', 'Питомец уснул... (+5 ⚡ и +1 🍬 / мин)'); this.sleepInterval = setInterval(() => { this.candies += 1; this.energy = Math.min(this.maxEnergy, this.energy + 5); this.updateUI(); this.showFloatingText('+1 🍬 | +5 ⚡'); }, 60000); }
+                else { this.isSleeping = true; this.updatePetVisual(); this.customAlert('Сон 🛏️', 'Питомец уснул... (+5 ⚡ и +1 🍬 / мин)'); this.sleepInterval = setInterval(() => { this.candies += 1; this.energy = Math.min(100, this.energy + 5); this.updateUI(); this.showFloatingText('+1 🍬 | +5 ⚡'); }, 60000); }
             },
 
             startParty() {
