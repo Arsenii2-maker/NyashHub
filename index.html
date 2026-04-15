@@ -43,22 +43,35 @@
         .placed-item span { display: block; font-size: 10px; background: white; color: #ff6b8b; padding: 3px 8px; border-radius: 10px; font-weight: bold; margin-top: -5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
         #modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 35px; padding: 25px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: #ff6b8b; }
+        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 35px; padding: 25px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.2); position: relative; overflow: hidden; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: #ff6b8b; z-index: 2; position: relative; }
         .close-btn { background: #fff0f3; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; color: #ff8fa3; }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; z-index: 2; position: relative; }
         .card { background: #f8f9fa; border-radius: 20px; padding: 15px; text-align: center; cursor: pointer; border: 3px solid transparent; font-weight: bold; color: #333; transition: 0.2s; }
         .card:active { transform: scale(0.95); }
         .card.active { border-color: #ff8fa3; background: #fff0f3; }
 
         .mg-btn { padding: 10px 20px; border: none; border-radius: 15px; background: #ff8fa3; color: white; font-weight: bold; font-size: 18px; cursor: pointer; width: 100%; }
-        .pool-spot { width: 50px; height: 30px; background: rgba(255,255,255,0.4); border-radius: 50%; position: absolute; cursor: pointer; border: 2px dashed #fff; }
-        #stove-bar-container { width: 100%; height: 30px; background: #ddd; border-radius: 15px; position: relative; overflow: hidden; margin-bottom: 15px; }
-        #stove-green-zone { position: absolute; left: 40%; width: 20%; height: 100%; background: #4caf50; }
-        #stove-cursor { position: absolute; left: 0%; width: 5px; height: 100%; background: red; transition: left 0.1s linear; }
+        
+        /* Стили для новых мини-игр */
+        #dog-area { font-size: 120px; text-align: center; user-select: none; touch-action: none; cursor: grab; padding: 20px; margin: 20px auto; display: inline-block; position: relative; }
+        #dog-area:active { cursor: grabbing; }
+        .floating-heart { position: absolute; font-size: 20px; pointer-events: none; animation: floatUp 1s ease-out forwards; z-index: 50; }
+        #pet-progress-bg { width: 100%; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+        #pet-progress-fill { width: 0%; height: 100%; background: #ff4757; transition: width 0.1s; }
+
+        #hammock-game-area { position: relative; width: 100%; height: 250px; background: #87CEEB; border-radius: 20px; overflow: hidden; touch-action: none; border: 3px solid #4eb8dd; }
+        #hammock-player { position: absolute; bottom: 10px; left: 50%; width: 60px; height: 40px; font-size: 40px; transform: translateX(-50%); text-align: center; line-height: 40px; }
+        .falling-item { position: absolute; font-size: 25px; top: -30px; }
+        
+        .chat-msg { background: #f1f2f6; padding: 10px 15px; border-radius: 15px; margin-bottom: 10px; width: 85%; font-size: 14px; position: relative; }
+        .chat-msg.bot { background: #fff0f3; border: 1px solid #ffc2d1; }
+        .chat-reward { display: inline-block; background: #ffeb3b; padding: 5px 10px; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .chat-reward:active { transform: scale(0.9); }
 
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -95,7 +108,7 @@
         </div>
 
         <div id="modal" class="hidden" onclick="game.closeBg(event)">
-            <div class="modal-content">
+            <div class="modal-content" id="modal-container">
                 <div class="modal-header">
                     <h2 id="modal-title">Меню</h2>
                     <button class="close-btn" onclick="game.close()">×</button>
@@ -120,11 +133,9 @@
             inventory: safeLoad('nhub_inv', []),
             theme: localStorage.getItem('nhub_theme') || 'theme-pink',
             
-            // Состояния еды и грядки
             foods: safeLoad('nhub_foods', { apple: 0, drink: 0, cake: 0, pie: 0 }),
             gardenState: parseInt(localStorage.getItem('nhub_garden')) || 0,
             
-            // Гардероб
             unlockedClothes: safeLoad('nhub_clothes', []),
             currentCloth: localStorage.getItem('nhub_cloth') || '',
             clothesData: {
@@ -141,7 +152,7 @@
             
             clickPower: 1,
             partyActive: false,
-            mgInterval: null, mgTimeout: null,
+            mgInterval: null, mgTimeout: null, animationFrame: null,
             
             rooms: ['yard', 'bedroom', 'kitchen'],
             roomNames: ['🌳 Двор', '🛏️ Спальня', '🍳 Кухня'],
@@ -154,7 +165,7 @@
                 // СПАЛЬНЯ
                 'wardrobe': { room: 'bedroom', name: 'Шкаф', price: 10, emoji: '👗', top: '48%', left: '10%', action: () => game.openWardrobe() },
                 'diary': { room: 'bedroom', name: 'Дневник', price: 20, emoji: '📔', top: '58%', left: '35%', action: () => game.openDiary() },
-                'oracle': { room: 'bedroom', name: 'Оракул', price: 40, emoji: '🔮', top: '35%', left: '75%', action: () => { if(game.consumeEnergy(5)) game.askOracle() } },
+                'phone': { room: 'bedroom', name: 'Смартфон', price: 60, emoji: '📱', top: '70%', left: '55%', action: () => game.openNyashgram() }, // НОВЫЙ ПРЕДМЕТ!
                 'pc': { room: 'bedroom', name: 'ПК', price: 50, emoji: '🖥️', top: '45%', left: '70%', action: () => { if(game.consumeEnergy(10)) game.openPCGame() } },
                 'bed': { room: 'bedroom', name: 'Кровать', price: 15, emoji: '🛏️', top: '60%', left: '10%', action: () => game.toggleSleep() },
                 'lamp': { room: 'bedroom', name: 'Лампа', price: 10, emoji: '💡', top: '25%', left: '20%', action: () => { if(game.consumeEnergy(15)) game.startParty() } },
@@ -162,7 +173,7 @@
                 
                 // ДВОР
                 'hammock': { room: 'yard', name: 'Гамак', price: 20, emoji: '🛶', top: '45%', left: '15%', action: () => game.openHammockMG() },
-                'doghouse': { room: 'yard', name: 'Будка', price: 30, emoji: '🛖', top: '55%', left: '75%', action: () => { if(game.consumeEnergy(5)) game.customAlert('Будка', 'Ты поиграл с песиком! -5 ⚡'); } },
+                'doghouse': { room: 'yard', name: 'Будка', price: 30, emoji: '🛖', top: '55%', left: '75%', action: () => game.openDoghouse() },
                 'garden': { room: 'yard', name: 'Грядка', price: 40, emoji: '🌱', top: '68%', left: '20%', action: () => game.interactGarden() },
                 'pool': { room: 'yard', name: 'Бассейн', price: 100, emoji: '🏊', top: '65%', left: '75%', action: () => game.openPoolMG() },
 
@@ -244,7 +255,7 @@
                 
                 if (this.isSleeping) {
                     petEl.innerText = '💤';
-                    clothesEl.innerText = ''; // Во сне прячем одежду
+                    clothesEl.innerText = '';
                 } else {
                     petEl.innerText = this.pet;
                     if (this.currentCloth && this.clothesData[this.currentCloth]) {
@@ -260,7 +271,6 @@
             updateUI() {
                 document.getElementById('candy-count').innerText = this.candies;
                 document.getElementById('energy-count').innerText = this.energy;
-                
                 this.updatePetVisual();
                 
                 localStorage.setItem('nhub_candies', this.candies);
@@ -300,11 +310,7 @@
                         
                         div.onclick = (e) => { 
                             e.stopPropagation(); 
-                            // Блокируем клик во сне для всего кроме кровати
-                            if(this.isSleeping && id !== 'bed') { 
-                                this.showFloatingText('Zzz...'); 
-                                return; 
-                            }
+                            if(this.isSleeping && id !== 'bed') { this.showFloatingText('Zzz...'); return; }
                             item.action(); 
                         };
                         layer.appendChild(div);
@@ -312,114 +318,209 @@
                 });
             },
 
-            // --- ГАРДЕРОБ (Одежда) ---
-            openWardrobe() {
-                document.getElementById('modal-title').innerText = "Гардероб (Одежда)";
-                let html = '<div class="grid">';
+            // --- НОВОЕ: NYASHGRAM (Смартфон) ---
+            openNyashgram() {
+                document.getElementById('modal-title').innerText = "💬 Nyashgram";
                 
-                html += `
-                    <div class="card ${this.currentCloth === '' ? 'active' : ''}" onclick="game.equipCloth('')">
-                        <div style="font-size:35px">❌</div><b>Снять всё</b>
-                    </div>
-                `;
-
-                for (let id in this.clothesData) {
-                    const item = this.clothesData[id];
-                    const isOwned = this.unlockedClothes.includes(id);
-                    const isEquipped = this.currentCloth === id;
-                    
+                const messages = [
+                    { sender: 'Пёс 🐶', text: 'Гав! Пошли гулять во двор!', isBot: true },
+                    { sender: 'Кот 🐱', text: 'Скинь конфет, пжлст... Я на мели.', isBot: true },
+                    { sender: 'Система ⚙️', text: 'У вас новое достижение: Няшик дня! Вот подарок.', reward: 5, isBot: true },
+                    { sender: 'Оракул 🔮', text: 'Звезды говорят, сегодня лучше не переедать тортиков.', isBot: true }
+                ];
+                
+                // Берем 3 случайных сообщения
+                const shuffled = messages.sort(() => 0.5 - Math.random()).slice(0, 3);
+                
+                let html = `<div style="height: 300px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;">`;
+                
+                shuffled.forEach(msg => {
                     html += `
-                        <div class="card ${isEquipped ? 'active' : ''}" onclick="game.interactCloth('${id}')">
-                            <div style="font-size:35px">${item.emoji}</div>
-                            <b style="color:#ff6b8b">${item.name}</b><br>
-                            <small>${isOwned ? (isEquipped ? 'Надето' : 'В шкафу') : item.price + ' 🍬'}</small>
+                        <div class="chat-msg bot">
+                            <b>${msg.sender}</b><br>
+                            ${msg.text}
+                            ${msg.reward ? `<br><div class="chat-reward" onclick="game.claimReward(this, ${msg.reward})">Забрать +${msg.reward} 🍬</div>` : ''}
                         </div>
                     `;
-                }
-                html += '</div>';
+                });
+                
+                html += `
+                    <div class="chat-msg" style="align-self: flex-end; background: #e3f2fd; border: 1px solid #bbdefb;">
+                        <b>Ты</b><br>
+                        Отлично! 😎
+                    </div>
+                </div>`;
+                
                 document.getElementById('modal-body').innerHTML = html;
                 document.getElementById('modal').classList.remove('hidden');
             },
 
-            interactCloth(id) {
-                if (this.unlockedClothes.includes(id)) {
-                    this.equipCloth(id);
-                } else {
-                    const item = this.clothesData[id];
-                    if (this.candies >= item.price) {
-                        this.candies -= item.price;
-                        this.unlockedClothes.push(id);
-                        this.updateUI();
-                        this.openWardrobe();
-                        this.showFloatingText('Куплено! 👗');
-                    } else {
-                        this.customAlert('Гардероб', 'Не хватает конфет! 🍬');
-                    }
-                }
-            },
-
-            equipCloth(id) {
-                this.currentCloth = id;
+            claimReward(element, amount) {
+                this.candies += amount;
                 this.updateUI();
-                this.openWardrobe();
+                element.style.display = 'none';
+                this.showFloatingText(`+${amount} 🍬`);
             },
 
-            // --- МИНИ-ИГРА: ГАМАК ---
-            openHammockMG() {
-                if (!this.consumeEnergy(5)) return; // Теперь гамак требует энергию в начале
-                
-                document.getElementById('modal-title').innerText = "Гамак (Балансируй!)";
+            // --- НОВОЕ: ГЛАДИМ ПЕСИКА (Будка) ---
+            openDoghouse() {
+                document.getElementById('modal-title').innerText = "В гостях у Песика";
                 document.getElementById('modal-body').innerHTML = `
-                    <div style="text-align:center; color:#666; margin-bottom:10px;">Жми на ту сторону, куда падает питомец!</div>
-                    <div id="hammock-pet" style="font-size:80px; text-align:center; transition: transform 0.3s; height: 100px; line-height: 100px;">${this.pet}</div>
-                    <div style="display:flex; justify-content:space-between; margin-top:20px;">
-                        <button class="mg-btn" style="width:45%" onclick="game.hammockClick('left')">◀ ВЛЕВО</button>
-                        <button class="mg-btn" style="width:45%" onclick="game.hammockClick('right')">ВПРАВО ▶</button>
+                    <div style="text-align:center; color:#666; font-weight:bold;">Зажми и води по песику, чтобы погладить!</div>
+                    <div id="pet-progress-bg"><div id="pet-progress-fill"></div></div>
+                    <div style="text-align:center;">
+                        <div id="dog-area">🐶</div>
+                    </div>
+                `;
+                document.getElementById('modal').classList.remove('hidden');
+
+                const dogArea = document.getElementById('dog-area');
+                this.pettingProgress = 0;
+                let isDragging = false;
+                let lastX = 0, lastY = 0;
+
+                const handleMove = (x, y) => {
+                    if (!isDragging) return;
+                    const deltaX = Math.abs(x - lastX);
+                    const deltaY = Math.abs(y - lastY);
+                    
+                    if (deltaX > 2 || deltaY > 2) {
+                        this.pettingProgress += 1.5;
+                        document.getElementById('pet-progress-fill').style.width = Math.min(100, this.pettingProgress) + '%';
+                        
+                        if (Math.random() < 0.1) {
+                            const heart = document.createElement('div');
+                            heart.className = 'floating-heart';
+                            heart.innerText = '❤️';
+                            heart.style.left = (Math.random() * 80 + 10) + '%';
+                            heart.style.top = (Math.random() * 80 + 10) + '%';
+                            dogArea.appendChild(heart);
+                            setTimeout(() => heart.remove(), 1000);
+                        }
+
+                        if (this.pettingProgress >= 100) {
+                            isDragging = false;
+                            this.energy = Math.min(this.maxEnergy, this.energy + 20);
+                            this.updateUI();
+                            this.customAlert('Хороший мальчик!', 'Песик очень рад! Ты зарядился позитивом (+20 ⚡)');
+                        }
+                    }
+                    lastX = x; lastY = y;
+                };
+
+                // Мышь
+                dogArea.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+                window.addEventListener('mouseup', () => { isDragging = false; });
+                dogArea.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+
+                // Сенсор (Телефоны)
+                dogArea.addEventListener('touchstart', (e) => { 
+                    isDragging = true; 
+                    lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; 
+                });
+                window.addEventListener('touchend', () => { isDragging = false; });
+                dogArea.addEventListener('touchmove', (e) => {
+                    e.preventDefault(); // Запрещаем прокрутку страницы при глажке
+                    handleMove(e.touches[0].clientX, e.touches[0].clientY);
+                });
+            },
+
+            // --- НОВОЕ: ГАМАК (Ловец сладостей) ---
+            openHammockMG() {
+                if (!this.consumeEnergy(10)) return;
+                
+                document.getElementById('modal-title').innerText = "Гамак (Ловец!)";
+                document.getElementById('modal-body').innerHTML = `
+                    <div style="text-align:center; color:#666; margin-bottom:10px;">Двигай гамак пальцем, чтобы ловить конфеты!</div>
+                    <div id="hammock-score" style="font-weight:bold; color:#ff6b8b; text-align:center; margin-bottom:5px;">Счет: 0 / 10</div>
+                    <div id="hammock-game-area">
+                        <div id="hammock-player">🛶</div>
                     </div>
                 `;
                 document.getElementById('modal').classList.remove('hidden');
                 
-                this.mgRounds = 0;
-                this.mgCurrentSide = 'center';
-                this.nextHammockTilt();
-            },
-
-            nextHammockTilt() {
-                if (this.mgRounds >= 5) {
-                    this.clearMinigames();
-                    this.candies += 10; this.updateUI();
-                    this.customAlert('Успех!', 'Ты удержался в гамаке! +10 🍬');
-                    return;
-                }
+                const gameArea = document.getElementById('hammock-game-area');
+                const player = document.getElementById('hammock-player');
                 
-                this.mgCurrentSide = Math.random() > 0.5 ? 'left' : 'right';
-                const el = document.getElementById('hammock-pet');
-                if(el) el.style.transform = this.mgCurrentSide === 'left' ? 'rotate(-30deg)' : 'rotate(30deg)';
+                this.mgScore = 0;
+                this.mgActive = true;
+                this.mgItems = [];
+                let playerX = gameArea.clientWidth / 2;
+
+                // Управление гамаком (перетаскивание)
+                const movePlayer = (clientX) => {
+                    const rect = gameArea.getBoundingClientRect();
+                    let x = clientX - rect.left;
+                    x = Math.max(30, Math.min(x, rect.width - 30)); // Ограничители
+                    playerX = x;
+                    player.style.left = x + 'px';
+                };
+
+                gameArea.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    movePlayer(e.touches[0].clientX);
+                });
+                gameArea.addEventListener('mousemove', (e) => {
+                    if(e.buttons > 0) movePlayer(e.clientX);
+                });
+
+                // Спавн падающих предметов
+                this.mgInterval = setInterval(() => {
+                    if(!this.mgActive) return;
+                    const item = document.createElement('div');
+                    item.className = 'falling-item';
+                    item.innerText = Math.random() > 0.2 ? '🍬' : '🍎';
+                    item.style.left = Math.random() * (gameArea.clientWidth - 30) + 'px';
+                    item.dataset.y = -30;
+                    gameArea.appendChild(item);
+                    this.mgItems.push(item);
+                }, 800);
+
+                // Игровой цикл
+                const loop = () => {
+                    if(!this.mgActive) return;
+                    
+                    for (let i = this.mgItems.length - 1; i >= 0; i--) {
+                        let item = this.mgItems[i];
+                        let y = parseFloat(item.dataset.y) + 3; // Скорость падения
+                        item.dataset.y = y;
+                        item.style.top = y + 'px';
+
+                        // Проверка коллизии с гамаком
+                        const playerRect = player.getBoundingClientRect();
+                        const itemRect = item.getBoundingClientRect();
+
+                        if (
+                            itemRect.bottom >= playerRect.top &&
+                            itemRect.top <= playerRect.bottom &&
+                            itemRect.right >= playerRect.left &&
+                            itemRect.left <= playerRect.right
+                        ) {
+                            // Поймали!
+                            if (item.innerText === '🍬') this.mgScore++;
+                            if (item.innerText === '🍎') { this.foods['apple']++; this.showFloatingText('+🍎'); }
+                            item.remove();
+                            this.mgItems.splice(i, 1);
+                            document.getElementById('hammock-score').innerText = `Счет: ${this.mgScore} / 10`;
+                            
+                            if (this.mgScore >= 10) {
+                                this.mgActive = false;
+                                this.candies += 15; this.updateUI();
+                                setTimeout(() => this.customAlert('Победа!', 'Отличный улов! +15 🍬'), 100);
+                            }
+                        } else if (y > gameArea.clientHeight) {
+                            // Пропустили
+                            item.remove();
+                            this.mgItems.splice(i, 1);
+                        }
+                    }
+                    if(this.mgActive) this.animationFrame = requestAnimationFrame(loop);
+                };
                 
-                this.mgTimeout = setTimeout(() => {
-                    this.clearMinigames();
-                    this.energy = Math.max(0, this.energy - 15); this.updateUI();
-                    this.customAlert('Ой!', 'Питомец упал с гамака! Больно! (-15 ⚡)');
-                }, 1500 - (this.mgRounds * 150));
+                loop();
             },
 
-            hammockClick(side) {
-                if (this.mgCurrentSide === side) {
-                    clearTimeout(this.mgTimeout);
-                    this.mgRounds++;
-                    this.mgCurrentSide = 'center';
-                    const el = document.getElementById('hammock-pet');
-                    if(el) el.style.transform = 'rotate(0deg)';
-                    setTimeout(() => this.nextHammockTilt(), 800);
-                } else {
-                    clearTimeout(this.mgTimeout);
-                    this.clearMinigames();
-                    this.energy = Math.max(0, this.energy - 15); this.updateUI();
-                    this.customAlert('Ой!', 'Нажал не туда! Питомец упал! (-15 ⚡)');
-                }
-            },
-
-            // --- МИНИ-ИГРА: БАССЕЙН ---
+            // --- ОСТАЛЬНЫЕ МИНИ-ИГРЫ ---
             openPoolMG() {
                 if(!this.consumeEnergy(10)) return;
                 document.getElementById('modal-title').innerText = "Прыжок в бассейн (-10 ⚡)";
@@ -447,15 +548,14 @@
                 this.customAlert('Плюх!', reward.t);
             },
 
-            // --- МИНИ-ИГРА: ПЛИТА ---
             openStoveMG() {
                 if(!this.consumeEnergy(10)) return;
                 document.getElementById('modal-title').innerText = "Готовка пирога (-10 ⚡)";
                 document.getElementById('modal-body').innerHTML = `
                     <div style="text-align:center; color:#666; margin-bottom:15px;">Нажми СТОП, когда красный бегунок будет в зеленой зоне!</div>
-                    <div id="stove-bar-container">
-                        <div id="stove-green-zone"></div>
-                        <div id="stove-cursor"></div>
+                    <div id="stove-bar-container" style="width: 100%; height: 30px; background: #ddd; border-radius: 15px; position: relative; overflow: hidden; margin-bottom: 15px;">
+                        <div id="stove-green-zone" style="position: absolute; left: 40%; width: 20%; height: 100%; background: #4caf50;"></div>
+                        <div id="stove-cursor" style="position: absolute; left: 0%; width: 5px; height: 100%; background: red; transition: left 0.1s linear;"></div>
                     </div>
                     <button class="mg-btn" onclick="game.stoveStop()">ОСТАНОВИТЬ ✋</button>
                 `;
@@ -502,9 +602,51 @@
             clearMinigames() {
                 if(this.mgInterval) clearInterval(this.mgInterval);
                 if(this.mgTimeout) clearTimeout(this.mgTimeout);
+                if(this.animationFrame) cancelAnimationFrame(this.animationFrame);
+                this.mgActive = false;
             },
 
-            // --- ЕДА И ГРЯДКА ---
+            // --- ИНВЕНТАРЬ И ГАРДЕРОБ ---
+            openWardrobe() {
+                document.getElementById('modal-title').innerText = "Гардероб (Одежда)";
+                let html = '<div class="grid">';
+                html += `
+                    <div class="card ${this.currentCloth === '' ? 'active' : ''}" onclick="game.equipCloth('')">
+                        <div style="font-size:35px">❌</div><b>Снять всё</b>
+                    </div>
+                `;
+
+                for (let id in this.clothesData) {
+                    const item = this.clothesData[id];
+                    const isOwned = this.unlockedClothes.includes(id);
+                    const isEquipped = this.currentCloth === id;
+                    
+                    html += `
+                        <div class="card ${isEquipped ? 'active' : ''}" onclick="game.interactCloth('${id}')">
+                            <div style="font-size:35px">${item.emoji}</div>
+                            <b style="color:#ff6b8b">${item.name}</b><br>
+                            <small>${isOwned ? (isEquipped ? 'Надето' : 'В шкафу') : item.price + ' 🍬'}</small>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+                document.getElementById('modal-body').innerHTML = html;
+                document.getElementById('modal').classList.remove('hidden');
+            },
+
+            interactCloth(id) {
+                if (this.unlockedClothes.includes(id)) {
+                    this.currentCloth = id; this.updateUI(); this.openWardrobe();
+                } else {
+                    const item = this.clothesData[id];
+                    if (this.candies >= item.price) {
+                        this.candies -= item.price; this.unlockedClothes.push(id); this.updateUI(); this.openWardrobe(); this.showFloatingText('Куплено! 👗');
+                    } else {
+                        this.customAlert('Гардероб', 'Не хватает конфет! 🍬');
+                    }
+                }
+            },
+
             interactGarden() {
                 if (this.gardenState === 0) {
                     if (this.consumeEnergy(5)) {
@@ -538,10 +680,7 @@
             buyFood(type) {
                 const prices = { 'apple': 2, 'drink': 5, 'cake': 12 };
                 if (this.candies >= prices[type]) {
-                    this.candies -= prices[type];
-                    this.foods[type] = (this.foods[type] || 0) + 1;
-                    this.updateUI();
-                    this.showFloatingText('Куплено! 🛒');
+                    this.candies -= prices[type]; this.foods[type] = (this.foods[type] || 0) + 1; this.updateUI(); this.showFloatingText('Куплено! 🛒');
                 } else {
                     this.customAlert('Ошибка', 'Не хватает конфет! 🍬');
                 }
@@ -551,14 +690,9 @@
                 document.getElementById('modal-title').innerText = "Миска (Инвентарь еды)";
                 let html = `<div style="text-align:center; margin-bottom:15px; font-weight:bold; color:#ff6b8b;">Энергия: ${this.energy}/${this.maxEnergy} ⚡</div><div class="grid">`;
                 
-                const foodData = {
-                    'apple': { emoji: '🍎', name: 'Яблоко', restore: 15 },
-                    'drink': { emoji: '🥫', name: 'Энергетик', restore: 40 },
-                    'cake': { emoji: '🍰', name: 'Торт', restore: 100 },
-                    'pie': { emoji: '🥧', name: 'Пирог', restore: 50 }
-                };
-
+                const foodData = { 'apple': { emoji: '🍎', name: 'Яблоко', restore: 15 }, 'drink': { emoji: '🥫', name: 'Энергетик', restore: 40 }, 'cake': { emoji: '🍰', name: 'Торт', restore: 100 }, 'pie': { emoji: '🥧', name: 'Пирог', restore: 50 } };
                 let hasFood = false;
+
                 for (let key in this.foods) {
                     if (this.foods[key] > 0) {
                         hasFood = true;
@@ -572,7 +706,6 @@
                         `;
                     }
                 }
-                
                 if (!hasFood) html += `<div style="grid-column:span 2; text-align:center;">Тут пусто! Купи еду или приготовь на плите.</div>`;
                 html += `</div>`;
                 document.getElementById('modal-body').innerHTML = html;
@@ -582,15 +715,10 @@
             eatFood(type) {
                 if (this.energy >= this.maxEnergy) { this.customAlert('Миска', 'Питомец не голоден! ⚡ на максимуме.'); return; }
                 const restores = { 'apple': 15, 'drink': 40, 'cake': 100, 'pie': 50 };
-                
-                this.foods[type]--;
-                this.energy = Math.min(this.maxEnergy, this.energy + restores[type]);
-                this.updateUI();
-                this.showFloatingText('+⚡');
-                this.openBowl();
+                this.foods[type]--; this.energy = Math.min(this.maxEnergy, this.energy + restores[type]); this.updateUI(); this.showFloatingText('+⚡'); this.openBowl();
             },
 
-            // --- НАСТРОЙКИ И ТЕМЫ ---
+            // --- НАСТРОЙКИ, МАГАЗИН, ПРОЧЕЕ ---
             openSettings() {
                 if (this.isSleeping) { this.showFloatingText('Zzz...'); return; }
                 document.getElementById('modal-title').innerText = "Настройки (Темы)";
@@ -622,7 +750,6 @@
                 this.updateUI();
             },
 
-            // --- ПРОЧЕЕ ---
             customAlert(title, text) {
                 this.clearMinigames();
                 document.getElementById('modal-title').innerText = title;
@@ -668,11 +795,6 @@
                     clearInterval(partyInterval); this.partyActive = false; this.clickPower = 1; this.updateRoomUI(); 
                     this.customAlert("🎉 Party!", "Candy Party окончена! Остываем... 😮‍💨");
                 }, 10000);
-            },
-
-            askOracle() {
-                const phrases = ["Сегодня будет няшный день! ✨", "Твой код без багов! 💻", "Осторожно, гамак коварный! 🛶"];
-                this.customAlert("🔮 Оракул:", phrases[Math.floor(Math.random() * phrases.length)]);
             },
 
             showFloatingText(txt) {
