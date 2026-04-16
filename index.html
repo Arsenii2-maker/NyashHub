@@ -188,7 +188,7 @@
             audioPlayer: new Audio(),
 
             shopItems: {
-                // СПАЛЬНЯ (Координаты переработаны)
+                // СПАЛЬНЯ
                 'wardrobe': { room: 'bedroom', name: 'Шкаф', price: 10, emoji: '👗', top: '25%', left: '15%', action: () => game.openWardrobe() },
                 'diary': { room: 'bedroom', name: 'Дневник', price: 20, emoji: '📔', top: '58%', left: '30%', action: () => game.openDiary() },
                 'phone': { room: 'bedroom', name: 'Смартфон', price: 60, emoji: '📱', top: '65%', left: '60%', action: () => game.openPhone() },
@@ -204,13 +204,17 @@
                 'doghouse': { room: 'yard', name: 'Будка', price: 30, emoji: '🛖', top: '55%', left: '75%', action: () => game.openDoghouse() },
                 'garden': { room: 'yard', name: 'Грядка', price: 40, emoji: '🌱', top: '68%', left: '20%', action: () => game.interactGarden() },
                 'pool': { room: 'yard', name: 'Бассейн', price: 100, emoji: '🏊', top: '65%', left: '75%', action: () => game.openPoolMG() },
-                'telescope': { room: 'yard', name: 'Звезды', price: 60, emoji: '🔭', top: '30%', left: '50%', action: () => game.useTelescope() },
 
                 // КУХНЯ
                 'fridge': { room: 'kitchen', name: 'Холод-к', price: 25, emoji: '🧊', top: '38%', left: '15%', action: () => game.openFridge() },
                 'stove': { room: 'kitchen', name: 'Плита', price: 35, emoji: '♨️', top: '48%', left: '70%', action: () => game.openStoveMG() },
                 'bowl': { room: 'kitchen', name: 'Миска', price: 15, emoji: '🥣', top: '75%', left: '25%', action: () => game.openBowl() },
-                'blender': { room: 'kitchen', name: 'Блендер', price: 40, emoji: '🥤', top: '48%', left: '40%', action: () => game.useBlender() }
+
+                // ЭКСКЛЮЗИВЫ ДЛЯ МАРКЕТПЛЕЙСА
+                'telescope': { room: 'yard', name: 'Звезды', price: 60, emoji: '🔭', top: '30%', left: '50%', marketplace: true, action: () => game.useTelescope() },
+                'trampoline': { room: 'yard', name: 'Батут', price: 80, emoji: '🤸', top: '75%', left: '50%', marketplace: true, action: () => game.useTrampoline() },
+                'blender': { room: 'kitchen', name: 'Блендер', price: 40, emoji: '🥤', top: '48%', left: '40%', marketplace: true, action: () => game.useBlender() },
+                'coffeemachine': { room: 'kitchen', name: 'Кофе', price: 50, emoji: '☕', top: '65%', left: '55%', marketplace: true, action: () => game.useCoffeeMachine() }
             },
 
             petList: ['🤖', '🐱', '🐶', '🐹', '🐰', '🦊', '🦄', '🐲', '👽', '👻'],
@@ -252,7 +256,7 @@
                     document.getElementById('delivery-layer').innerHTML = ''; 
                     
                     if (this.currentExcursion === 'park') {
-                        title.innerText = '🌲 Парк; 
+                        title.innerText = '🌲 Парк'; 
                         btn1.innerText = '🍄'; btn1.onclick = () => this.startMushroomForest();
                         btn2.innerText = '🐰'; btn2.onclick = () => this.startThimbles();
                         body.background = "#81c784"; wall.background = "#aed581"; floor.background = "#689f38"; wall.boxShadow = "none";
@@ -281,7 +285,7 @@
                         body.background = "#FFFACD"; wall.background = "#FFFACD"; floor.background = "#F4A460"; floor.borderTop = "4px solid #D2691E"; wall.boxShadow = "none";
                         document.getElementById('delivery-layer').innerHTML = '';
                     } else {
-                        // ПРИНУДИТЕЛЬНЫЙ ВОЗВРАТ ТЕМЫ В СПАЛЬНЕ
+                        // ВОЗВРАТ ТЕМЫ В СПАЛЬНЕ ИЗ СОСТОЯНИЯ
                         this.applyTheme(this.theme);
                         document.getElementById('delivery-layer').innerHTML = '';
                     }
@@ -312,6 +316,7 @@
                 document.getElementById('candy-count').innerText = this.candies; document.getElementById('energy-count').innerText = this.energy;
                 this.updatePetVisual();
                 localStorage.setItem('nhub_candies', this.candies); localStorage.setItem('nhub_energy', this.energy);
+                localStorage.setItem('nhub_theme', this.theme); // СОХРАНЕНИЕ ТЕМЫ
                 localStorage.setItem('nhub_clothes', JSON.stringify(this.unlockedClothes)); localStorage.setItem('nhub_cloth', this.currentCloth);
                 localStorage.setItem('nhub_foods', JSON.stringify(this.foods)); localStorage.setItem('nhub_inv', JSON.stringify(this.inventory));
             },
@@ -376,11 +381,7 @@
             },
             goHome() { this.currentExcursion = null; this.updateRoomUI(); },
 
-            // ==========================================
-            // НОВЫЕ МИНИ-ИГРЫ
-            // ==========================================
-
-            // ПАРК 1: Лес с Грибами
+            // МИНИ ИГРЫ ОСТАЛИСЬ БЕЗ ИЗМЕНЕНИЙ
             startMushroomForest() {
                 if(!this.consumeEnergy(5)) return;
                 document.getElementById('modal-title').innerText = "Лес: Поиск 🍄";
@@ -397,8 +398,6 @@
                 if(isMush) { el.innerText = '🍄'; this.mushFound++; document.getElementById('mush-count').innerText = `Найдено: ${this.mushFound} / 5`; if(this.mushFound >= 5) { this.candies += 25; this.updateUI(); setTimeout(()=>this.customAlert('Отлично!', 'Ты нашел все грибы в лесу! +25 🍬'), 300); } } 
                 else { el.innerText = '🍂'; }
             },
-
-            // ПАРК 2: Наперстки
             startThimbles() {
                 if(!this.consumeEnergy(5)) return;
                 document.getElementById('modal-title').innerText = "Наперстки 🐰";
@@ -409,8 +408,6 @@
                 if(choice === this.thimbleAns) { this.foods['berry'] = (this.foods['berry']||0) + 1; this.updateUI(); this.customAlert('Победа!', 'Ты угадал! Зайчик подарил тебе Ягоды 🫐!'); } 
                 else { this.customAlert('Упс!', 'Пусто! Шарик был в другом стакане.'); }
             },
-
-            // ПЛЯЖ 1: Замок с волной
             startBeachCastle() {
                 if(!this.consumeEnergy(5)) return;
                 document.getElementById('modal-title').innerText = "Пляж: Замок 🏰";
@@ -427,8 +424,6 @@
                 this.mgClicks += 10; document.getElementById('beach-bar').style.width = this.mgClicks + '%';
                 if(this.mgClicks >= 100) { this.clearMinigames(); this.candies += 20; this.updateUI(); this.customAlert('Шедевр!', 'Замок построен! В песке было 20 🍬!'); }
             },
-
-            // ПЛЯЖ 2: Игра с Дельфином
             startDolphin() {
                 if(!this.consumeEnergy(5)) return;
                 document.getElementById('modal-title').innerText = "Мяч с Дельфином 🐬";
@@ -445,8 +440,6 @@
                 let b = document.getElementById('d-ball'); if(b) { b.style.left = (Math.random() * 80 + 10) + '%'; }
                 if(this.dolphinScore >= 5) { this.clearMinigames(); this.candies += 20; this.updateUI(); this.customAlert('Ура!', 'Отличная игра с дельфином! +20 🍬'); }
             },
-
-            // АТТРАКЦИОНЫ 1: Тир
             startAmusementTarget() {
                 if(!this.consumeEnergy(5)) return;
                 document.getElementById('modal-title').innerText = "Тир 🎯";
@@ -456,8 +449,6 @@
                 this.mgInterval = setInterval(() => { pos += 2 * dir; if(pos > 90) dir = -1; if(pos < 0) dir = 1; const t = document.getElementById('target'); if(t) t.style.left = pos + '%'; }, 20);
             },
             targetHit() { this.clearMinigames(); this.candies += 25; this.updateUI(); this.customAlert('В яблочко!', 'Меткий выстрел! Приз: 25 🍬!'); },
-
-            // АТТРАКЦИОНЫ 2: Хватайка
             startClawMachine() {
                 if(this.candies < 10) { this.customAlert('Хватайка', 'Нужно 10 🍬 для запуска!'); return; }
                 if(!this.consumeEnergy(5)) return;
@@ -482,21 +473,51 @@
                 }, 500);
             },
 
-            // MarketPlace & NyashGram
+            // ИЗМЕНЁННЫЙ МАРКЕТПЛЕЙС 
             openMarket() {
-                document.getElementById('modal-title').innerText = "📦 MarketPlace"; let html = '<div class="grid">';
+                document.getElementById('modal-title').innerText = "📦 MarketPlace";
+                let html = `<div style="text-align:center; margin-bottom: 10px; font-weight: bold; color: #ff6b8b;">Эксклюзивные товары!</div><div class="grid">`;
+                
+                // Рендерим премиум скины
                 for (let id in this.clothesData) {
                     if (this.clothesData[id].premium) {
                         const item = this.clothesData[id]; const isOwned = this.unlockedClothes.includes(id);
-                        html += `<div class="card ${isOwned ? 'active' : ''}" onclick="game.buyPremiumCloth('${id}')"><div style="font-size:35px">${item.emoji}</div><b style="color:#ff6b8b">${item.name}</b><br><small style="color:red; font-weight:bold;">Эксклюзив</small><br><small>${isOwned ? 'Куплено' : item.price + ' 🍬'}</small></div>`;
+                        html += `<div class="card ${isOwned ? 'active' : ''}" onclick="game.buyPremiumCloth('${id}')"><div style="font-size:35px">${item.emoji}</div><b style="color:#ff6b8b">${item.name}</b><br><small style="color:red; font-weight:bold;">Костюм</small><br><small>${isOwned ? 'Куплено' : item.price + ' 🍬'}</small></div>`;
                     }
                 }
+                
+                // Рендерим эксклюзивную мебель
+                for (let id in this.shopItems) {
+                    if (this.shopItems[id].marketplace) {
+                        const item = this.shopItems[id]; const isOwned = this.inventory.includes(id);
+                        html += `<div class="card ${isOwned ? 'active' : ''}" onclick="game.buyMarketItem('${id}')"><div style="font-size:35px">${item.emoji}</div><b style="color:#ff6b8b">${item.name}</b><br><small style="color:red; font-weight:bold;">${item.room === 'yard' ? 'Двор' : 'Кухня'}</small><br><small>${isOwned ? 'Доставлено' : item.price + ' 🍬'}</small></div>`;
+                    }
+                }
+                
                 html += '</div>'; document.getElementById('modal-body').innerHTML = html;
             },
+            
             buyPremiumCloth(id) {
                 if (this.unlockedClothes.includes(id)) { this.currentCloth = id; this.updateUI(); this.customAlert('MarketPlace', 'Скин надет! 🤩'); } 
                 else { const item = this.clothesData[id]; if (this.candies >= item.price) { this.candies -= item.price; this.unlockedClothes.push(id); this.currentCloth = id; this.updateUI(); this.customAlert('Успех!', 'Костюм доставлен и надет! 📦'); } else { this.customAlert('MarketPlace', 'Не хватает конфет! 🍬'); } }
             },
+            
+            // Новая функция покупки мебели через маркетплейс
+            buyMarketItem(id) {
+                const item = this.shopItems[id];
+                if (this.inventory.includes(id)) { this.customAlert('MarketPlace', 'Этот предмет уже доставлен! 📦'); return; }
+                if (this.candies >= item.price) {
+                    this.candies -= item.price;
+                    this.inventory.push(id);
+                    this.updateUI();
+                    this.renderFurniture();
+                    this.openMarket(); // Обновляем модалку
+                    this.customAlert('Успех!', `${item.name} успешно доставлен курьером! 📦`);
+                } else {
+                    this.customAlert('MarketPlace', 'Не хватает конфет! 🍬');
+                }
+            },
+
             openNyashgram() {
                 document.getElementById('modal-title').innerText = "💬 Nyashgram";
                 const msgs = [{ sender: 'Пёс 🐶', text: 'Гав! Пошли гулять!', isBot: true, canTip: true }, { sender: 'Кот 🐱', text: 'Скинь конфет...', isBot: true, canTip: true }, { sender: 'Система ⚙️', text: 'Подарок!', reward: 5, isBot: true }, { sender: 'Оракул 🔮', text: 'Звезды говорят, сегодня отличный день.', isBot: true }];
@@ -507,11 +528,17 @@
             },
             tipBot(botName) { if (this.candies >= 5) { this.candies -= 5; this.updateUI(); this.showFloatingText('-5 🍬'); this.customAlert('Отправлено!', `${botName} говорит тебе большое спасибо! ❤️`); } else { this.customAlert('Ой', 'У тебя нет столько конфет! 🍬'); } },
 
-            // Новые предметы (Блендер и Телескоп)
+            // Функции маркетплейс-предметов
             useTelescope() {
                 if(!this.consumeEnergy(5)) return;
                 if(Math.random() > 0.5) { this.candies += 10; this.updateUI(); this.customAlert('Телескоп 🔭', 'Ты увидел падающую звезду и загадал желание! Упало 10 🍬.'); }
                 else { this.customAlert('Телескоп 🔭', 'Красивое звездное небо... ✨'); }
+            },
+            useTrampoline() {
+                if(!this.consumeEnergy(10)) return;
+                this.customAlert('Батут 🤸', 'Юхууу! Прыжки до небес! ☁️ (+15 🍬)');
+                this.candies += 15;
+                this.updateUI();
             },
             useBlender() {
                 document.getElementById('modal-title').innerText = "Блендер 🥤";
@@ -522,6 +549,12 @@
                 if((this.foods['apple']||0) >= 1 && (this.foods['berry']||0) >= 1) {
                     this.foods['apple']--; this.foods['berry']--; this.foods['drink'] = (this.foods['drink']||0) + 1; this.updateUI(); this.customAlert('Блендер', 'Готово! Смузи (в виде Энергетика 🥫) добавлено в Миску!');
                 } else { this.customAlert('Блендер', 'Не хватает ингредиентов!'); }
+            },
+            useCoffeeMachine() {
+                if(!this.consumeEnergy(5)) return;
+                this.energy = Math.min(100, this.energy + 20);
+                this.updateUI();
+                this.customAlert('Кофемашина ☕', 'Ммм, свежий кофе! Бодрит! (+20 ⚡)');
             },
 
             // Оракул и Плеер
@@ -631,7 +664,6 @@
             },
             buyFood(type) { const prices = { 'apple': 2, 'drink': 5, 'cake': 12 }; if (this.candies >= prices[type]) { this.candies -= prices[type]; this.foods[type] = (this.foods[type] || 0) + 1; this.updateUI(); this.showFloatingText('Куплено! 🛒'); } else { this.customAlert('Ошибка', 'Не хватает конфет! 🍬'); } },
 
-            // УНИКАЛЬНАЯ ЛОГИКА ЕДЫ
             openBowl() {
                 document.getElementById('modal-title').innerText = "Миска (Инвентарь еды)"; let html = `<div style="text-align:center; margin-bottom:15px; font-weight:bold; color:#ff6b8b;">Энергия: ${this.energy}/100 ⚡ ${this.energy > 100 ? '(ПЕРЕГРУЗКА!)' : ''}</div><div class="grid">`;
                 const foodData = { 'apple': { emoji: '🍎', name: 'Яблоко', restore: '+15 ⚡' }, 'berry': { emoji: '🫐', name: 'Ягоды', restore: '+20 ⚡' }, 'drink': { emoji: '🥫', name: 'Энергетик', restore: '+40 ⚡' }, 'cake': { emoji: '🍰', name: 'Торт', restore: '+100 ⚡' }, 'pie': { emoji: '🥧', name: 'Пирог', restore: '+50 ⚡' }, 'burger': { emoji: '🍔', name: 'Бургер', restore: '+120 ⚡' }, 'pizza': { emoji: '🍕', name: 'Пицца', restore: '200 ⚡ MAX' } };
@@ -640,12 +672,12 @@
             },
             eatFood(type) { 
                 if (type === 'pizza') {
-                    this.energy = 200; // Уникальная способность пиццы
+                    this.energy = 200;
                 } else {
                     if (this.energy >= 100) { this.customAlert('Миска', 'Энергия уже полная (100⚡)! Больше влезет только Пицца 🍕.'); return; }
                     const restores = { 'apple': 15, 'drink': 40, 'cake': 100, 'pie': 50, 'burger': 120, 'berry': 20 }; 
                     this.energy += restores[type];
-                    if (this.energy > 100) this.energy = 100; // Остальная еда режет лимит до 100
+                    if (this.energy > 100) this.energy = 100;
                 }
                 this.foods[type]--; this.updateUI(); this.showFloatingText('+⚡'); this.openBowl(); 
             },
@@ -663,7 +695,7 @@
                     else if(t === 'theme-ocean') { body.background = "#e0f7fa"; wall.background = "#b2ebf2"; floor.background = "#4dd0e1"; floor.borderTop = "4px solid rgba(0,0,0,0.05)"; }
                     else if(t === 'theme-forest') { body.background = "#e8f5e9"; wall.background = "#c8e6c9"; floor.background = "#81c784"; floor.borderTop = "4px solid #4caf50"; }
                     else if(t === 'theme-gold') { body.background = "#fff8e1"; wall.background = "#ffecb3"; floor.background = "#ffd54f"; floor.borderTop = "4px solid #ffca28"; }
-                } this.updateUI();
+                } this.updateUI(); // Убрали здесь сохранение темы в сторадж, оно в updateUI
             },
 
             customAlert(title, text) {
@@ -700,17 +732,24 @@
 
             buy(id) { const item = this.shopItems[id]; if (this.candies >= item.price && !this.inventory.includes(id)) { this.candies -= item.price; this.inventory.push(id); this.updateUI(); this.renderFurniture(); this.openShop(); } },
 
+            // ИЗМЕНЕННЫЙ МАГАЗИН: Скрываем товары из маркетплейса
             openShop() {
                 if (this.isSleeping) { this.showFloatingText('Zzz...'); return; }
                 if (this.currentExcursion) { this.customAlert('Магазин 🛒', 'Питомец сейчас на улице! Вернитесь домой, чтобы открыть магазин.'); return; }
-                document.getElementById('modal-title').innerText = `Магазин (${this.roomNames[this.currentRoomIndex]})`; let html = '<div class="grid">'; const currentRoomName = this.rooms[this.currentRoomIndex]; let hasItems = false;
+                document.getElementById('modal-title').innerText = `Магазин (${this.roomNames[this.currentRoomIndex]})`; 
+                let html = '<div class="grid">'; 
+                const currentRoomName = this.rooms[this.currentRoomIndex]; 
+                let hasItems = false;
+                
                 for (let id in this.shopItems) {
-                    if (this.shopItems[id].room === currentRoomName) {
+                    // Проверяем комнату И отсутствие флага marketplace
+                    if (this.shopItems[id].room === currentRoomName && !this.shopItems[id].marketplace) {
                         hasItems = true; const isOwned = this.inventory.includes(id);
                         html += `<div class="card ${isOwned ? 'active' : ''}" onclick="game.buy('${id}')"><div style="font-size:40px">${this.shopItems[id].emoji}</div><b style="color:#ff6b8b">${this.shopItems[id].name}</b><br><small>${isOwned ? 'Куплено' : this.shopItems[id].price + ' 🍬'}</small></div>`;
                     }
                 }
-                if (!hasItems) html += `<div style="grid-column: span 2; text-align:center;">Пусто!</div>`; html += '</div>'; document.getElementById('modal-body').innerHTML = html; document.getElementById('modal').classList.remove('hidden');
+                if (!hasItems) html += `<div style="grid-column: span 2; text-align:center;">Пусто!</div>`; html += '</div>'; 
+                document.getElementById('modal-body').innerHTML = html; document.getElementById('modal').classList.remove('hidden');
             },
 
             openPets() {
