@@ -11,15 +11,33 @@
     <link rel="apple-touch-icon" href="icon.png">
 
     <style>
-        /* ИСПРАВЛЕНИЕ: Запрет выделения текста и зума, но разрешен скролл (pan-y) */
-        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: pan-y; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+        /* Блокировка выделения и жестов масштабирования */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            touch-action: pan-y; 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none; 
+            -webkit-user-select: none; 
+            -ms-user-select: none;
+        }
         
-        /* Исключение для ввода текста в дневнике */
+        /* Исключение для ввода текста */
         textarea, input { user-select: auto; -webkit-user-select: auto; }
 
-        body, html { width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: #ffeaef; transition: background 0.3s; }
+        body, html { 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            font-family: sans-serif; 
+            background: #ffeaef; 
+            transition: background 0.3s; 
+            /* Дополнительная защита от зума на iOS */
+            touch-action: none;
+        }
 
-        #app { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        #app { position: fixed; top: 0; left: 0; width: 100%; height: 100%; touch-action: pan-y; }
 
         .room-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; transition: 0.5s; }
         .wall { width: 100%; height: 60%; background: #ffc2d1; transition: background 0.3s, box-shadow 0.3s; }
@@ -48,10 +66,7 @@
         .placed-item span { display: block; font-size: 10px; background: white; color: #ff6b8b; padding: 3px 8px; border-radius: 10px; font-weight: bold; margin-top: -5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
         #modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        
-        /* ИСПРАВЛЕНИЕ: Убрано overflow: hidden, оставлено overflow-y: auto для скролла */
         .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 35px; padding: 25px; max-height: 80vh; overflow-y: auto; overflow-x: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2); position: relative; }
-        
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: #ff6b8b; z-index: 2; position: relative; }
         .close-btn { background: #fff0f3; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; color: #ff8fa3; }
 
@@ -196,7 +211,6 @@
             audioPlayer: new Audio(),
 
             shopItems: {
-                // СПАЛЬНЯ
                 'wardrobe': { room: 'bedroom', name: 'Шкаф', price: 10, emoji: '👗', top: '25%', left: '15%', action: () => game.openWardrobe() },
                 'diary': { room: 'bedroom', name: 'Дневник', price: 20, emoji: '📔', top: '58%', left: '30%', action: () => game.openDiary() },
                 'phone': { room: 'bedroom', name: 'Смартфон', price: 60, emoji: '📱', top: '65%', left: '60%', action: () => game.openPhone() },
@@ -207,18 +221,15 @@
                 'boombox': { room: 'bedroom', name: 'Музыка', price: 40, emoji: '📻', top: '20%', left: '60%', action: () => game.openMusicPlayer() },
                 'oracle': { room: 'bedroom', name: 'Оракул', price: 70, emoji: '🔮', top: '25%', left: '80%', action: () => game.useOracle() },
                 
-                // ДВОР
                 'hammock': { room: 'yard', name: 'Гамак', price: 20, emoji: '🛶', top: '45%', left: '15%', action: () => game.openHammockMG() },
                 'doghouse': { room: 'yard', name: 'Будка', price: 30, emoji: '🛖', top: '55%', left: '75%', action: () => game.openDoghouse() },
                 'garden': { room: 'yard', name: 'Грядка', price: 40, emoji: '🌱', top: '68%', left: '20%', action: () => game.interactGarden() },
                 'pool': { room: 'yard', name: 'Бассейн', price: 100, emoji: '🏊', top: '65%', left: '75%', action: () => game.openPoolMG() },
 
-                // КУХНЯ
                 'fridge': { room: 'kitchen', name: 'Холод-к', price: 25, emoji: '🧊', top: '38%', left: '15%', action: () => game.openFridge() },
                 'stove': { room: 'kitchen', name: 'Плита', price: 35, emoji: '♨️', top: '48%', left: '70%', action: () => game.openStoveMG() },
                 'bowl': { room: 'kitchen', name: 'Миска', price: 15, emoji: '🥣', top: '75%', left: '25%', action: () => game.openBowl() },
 
-                // ЭКСКЛЮЗИВЫ ДЛЯ МАРКЕТПЛЕЙСА
                 'telescope': { room: 'yard', name: 'Звезды', price: 60, emoji: '🔭', top: '30%', left: '50%', marketplace: true, action: () => game.useTelescope() },
                 'trampoline': { room: 'yard', name: 'Батут', price: 80, emoji: '🤸', top: '75%', left: '50%', marketplace: true, action: () => game.useTrampoline() },
                 'blender': { room: 'kitchen', name: 'Блендер', price: 40, emoji: '🥤', top: '48%', left: '40%', marketplace: true, action: () => game.useBlender() },
@@ -293,6 +304,7 @@
                         body.background = "#FFFACD"; wall.background = "#FFFACD"; floor.background = "#F4A460"; floor.borderTop = "4px solid #D2691E"; wall.boxShadow = "none";
                         document.getElementById('delivery-layer').innerHTML = '';
                     } else {
+                        // ИСПРАВЛЕНИЕ: Гарантированное применение сохраненной темы при входе в спальню
                         this.applyTheme(this.theme);
                         document.getElementById('delivery-layer').innerHTML = '';
                     }
@@ -388,7 +400,6 @@
             },
             goHome() { this.currentExcursion = null; this.updateRoomUI(); },
 
-            // ИСПРАВЛЕНИЕ: Обновленная мини-игра про грибы (с лимитом ошибок)
             startMushroomForest() {
                 if(!this.consumeEnergy(5)) return;
                 document.getElementById('modal-title').innerText = "Лес: Поиск 🍄";
@@ -407,7 +418,7 @@
             },
             clickTree(idx, isMush) {
                 let el = document.getElementById(`tree-${idx}`);
-                if(el.innerText !== '🌲') return; // Если уже нажато - игнорируем
+                if(el.innerText !== '🌲') return; 
                 
                 if(isMush) { 
                     el.innerText = '🍄'; this.mushFound++; 
@@ -552,17 +563,37 @@
             },
             tipBot(botName) { if (this.candies >= 5) { this.candies -= 5; this.updateUI(); this.showFloatingText('-5 🍬'); this.customAlert('Отправлено!', `${botName} говорит тебе большое спасибо! ❤️`); } else { this.customAlert('Ой', 'У тебя нет столько конфет! 🍬'); } },
 
+            // ИНТЕРАКТИВ: Телескоп
             useTelescope() {
                 if(!this.consumeEnergy(5)) return;
-                if(Math.random() > 0.5) { this.candies += 10; this.updateUI(); this.customAlert('Телескоп 🔭', 'Ты увидел падающую звезду и загадал желание! Упало 10 🍬.'); }
-                else { this.customAlert('Телескоп 🔭', 'Красивое звездное небо... ✨'); }
+                const events = [
+                    { t: 'Ты увидел падающую звезду! 🌠 +15 🍬', action: () => { this.candies += 15; } },
+                    { t: 'В объектив попала пролетающая тарелка! 🛸 Питомец в шоке.', action: () => { this.showFloatingText('👽?!'); } },
+                    { t: 'Сегодня полнолуние. 🌕 Энергия восстановилась на 10.', action: () => { this.energy = Math.min(100, this.energy + 10); } },
+                    { t: 'Просто красивое ночное небо. ✨', action: () => {} }
+                ];
+                const ev = events[Math.floor(Math.random() * events.length)];
+                ev.action(); this.updateUI();
+                this.customAlert('Телескоп 🔭', ev.t);
             },
+
+            // ИНТЕРАКТИВ: Батут
             useTrampoline() {
                 if(!this.consumeEnergy(10)) return;
-                this.customAlert('Батут 🤸', 'Юхууу! Прыжки до небес! ☁️ (+15 🍬)');
-                this.candies += 15;
-                this.updateUI();
+                let jumps = 0;
+                this.customAlert('Батут 🤸', 'Юхууу! Прыгаем! Нажми ОК, чтобы начать серию прыжков.');
+                const jumpInterval = setInterval(() => {
+                    jumps++;
+                    this.showFloatingText('ПРЫЖОК! ☁️');
+                    if(jumps >= 3) {
+                        clearInterval(jumpInterval);
+                        this.candies += 20;
+                        this.updateUI();
+                        this.showFloatingText('+20 🍬');
+                    }
+                }, 600);
             },
+
             useBlender() {
                 document.getElementById('modal-title').innerText = "Блендер 🥤";
                 document.getElementById('modal-body').innerHTML = `<div style="text-align:center;">Сделай Смузи (+40⚡)!<br><br>Нужно: 1 🍎 и 1 🫐<br>У тебя: ${this.foods['apple']||0} 🍎 и ${this.foods['berry']||0} 🫐</div><button class="mg-btn" onclick="game.craftSmoothie()">Смешать!</button>`;
@@ -573,11 +604,20 @@
                     this.foods['apple']--; this.foods['berry']--; this.foods['drink'] = (this.foods['drink']||0) + 1; this.updateUI(); this.customAlert('Блендер', 'Готово! Смузи (в виде Энергетика 🥫) добавлено в Миску!');
                 } else { this.customAlert('Блендер', 'Не хватает ингредиентов!'); }
             },
+
+            // ИНТЕРАКТИВ: Кофемашина
             useCoffeeMachine() {
+                if(this.energy >= 100) { this.customAlert('Кофе ☕', 'Ты и так на бодряке! ⚡'); return; }
                 if(!this.consumeEnergy(5)) return;
-                this.energy = Math.min(100, this.energy + 20);
-                this.updateUI();
-                this.customAlert('Кофемашина ☕', 'Ммм, свежий кофе! Бодрит! (+20 ⚡)');
+                document.getElementById('modal-title').innerText = "Кофемашина ☕";
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; padding:10px;"><b>Готовим ароматный кофе...</b><br><div style="font-size:50px; margin:10px;">⏳</div></div>`;
+                document.getElementById('modal').classList.remove('hidden');
+                
+                setTimeout(() => {
+                    this.energy = Math.min(100, this.energy + 25);
+                    this.updateUI();
+                    this.customAlert('Кофе готов! ☕', 'Ммм... Бодрость получена! (+25 ⚡)');
+                }, 2000);
             },
 
             useOracle() { if(!this.consumeEnergy(5)) return; const p = ["Скоро ты найдешь много конфет... 🍬", "Берегись сгоревших пирогов на кухне! 🔥", "Твой питомец мечтает о костюме космонавта 👨‍🚀", "Пицца - самая сильная еда в игре! 🍕"]; this.customAlert('Оракул 🔮', p[Math.floor(Math.random() * p.length)]); },
