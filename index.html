@@ -11,7 +11,12 @@
     <link rel="apple-touch-icon" href="icon.png">
 
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        /* ИСПРАВЛЕНИЕ: Запрет выделения текста и зума, но разрешен скролл (pan-y) */
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: pan-y; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+        
+        /* Исключение для ввода текста в дневнике */
+        textarea, input { user-select: auto; -webkit-user-select: auto; }
+
         body, html { width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: #ffeaef; transition: background 0.3s; }
 
         #app { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
@@ -33,7 +38,7 @@
 
         #pet-container { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); z-index: 10; cursor: pointer; text-align: center; }
         .pet-wrapper { position: relative; animation: float 3s infinite ease-in-out; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
-        #pet { font-size: 130px; user-select: none; transition: filter 0.1s; }
+        #pet { font-size: 130px; transition: filter 0.1s; }
         #pet-clothes { position: absolute; left: 50%; transform: translateX(-50%); font-size: 75px; z-index: 3; pointer-events: none; text-align: center; width: 100px; transition: 0.2s; }
         #pet-container:active .pet-wrapper { transform: scale(0.9); }
 
@@ -43,7 +48,10 @@
         .placed-item span { display: block; font-size: 10px; background: white; color: #ff6b8b; padding: 3px 8px; border-radius: 10px; font-weight: bold; margin-top: -5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
         #modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 35px; padding: 25px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.2); position: relative; overflow: hidden; }
+        
+        /* ИСПРАВЛЕНИЕ: Убрано overflow: hidden, оставлено overflow-y: auto для скролла */
+        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 35px; padding: 25px; max-height: 80vh; overflow-y: auto; overflow-x: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2); position: relative; }
+        
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: #ff6b8b; z-index: 2; position: relative; }
         .close-btn { background: #fff0f3; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; color: #ff8fa3; }
 
@@ -60,7 +68,7 @@
 
         .mg-btn { padding: 10px 20px; border: none; border-radius: 15px; background: #ff8fa3; color: white; font-weight: bold; font-size: 18px; cursor: pointer; width: 100%; margin-top: 10px; }
         
-        #dog-area { font-size: 120px; text-align: center; user-select: none; touch-action: none; cursor: grab; padding: 20px; margin: 20px auto; display: inline-block; position: relative; }
+        #dog-area { font-size: 120px; text-align: center; touch-action: none; cursor: grab; padding: 20px; margin: 20px auto; display: inline-block; position: relative; }
         .floating-heart { position: absolute; font-size: 20px; pointer-events: none; animation: floatUp 1s ease-out forwards; z-index: 50; }
         #pet-progress-bg { width: 100%; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
         #pet-progress-fill { width: 0%; height: 100%; background: #ff4757; transition: width 0.1s; }
@@ -285,7 +293,6 @@
                         body.background = "#FFFACD"; wall.background = "#FFFACD"; floor.background = "#F4A460"; floor.borderTop = "4px solid #D2691E"; wall.boxShadow = "none";
                         document.getElementById('delivery-layer').innerHTML = '';
                     } else {
-                        // ВОЗВРАТ ТЕМЫ В СПАЛЬНЕ ИЗ СОСТОЯНИЯ
                         this.applyTheme(this.theme);
                         document.getElementById('delivery-layer').innerHTML = '';
                     }
@@ -316,7 +323,7 @@
                 document.getElementById('candy-count').innerText = this.candies; document.getElementById('energy-count').innerText = this.energy;
                 this.updatePetVisual();
                 localStorage.setItem('nhub_candies', this.candies); localStorage.setItem('nhub_energy', this.energy);
-                localStorage.setItem('nhub_theme', this.theme); // СОХРАНЕНИЕ ТЕМЫ
+                localStorage.setItem('nhub_theme', this.theme);
                 localStorage.setItem('nhub_clothes', JSON.stringify(this.unlockedClothes)); localStorage.setItem('nhub_cloth', this.currentCloth);
                 localStorage.setItem('nhub_foods', JSON.stringify(this.foods)); localStorage.setItem('nhub_inv', JSON.stringify(this.inventory));
             },
@@ -381,23 +388,44 @@
             },
             goHome() { this.currentExcursion = null; this.updateRoomUI(); },
 
-            // МИНИ ИГРЫ ОСТАЛИСЬ БЕЗ ИЗМЕНЕНИЙ
+            // ИСПРАВЛЕНИЕ: Обновленная мини-игра про грибы (с лимитом ошибок)
             startMushroomForest() {
                 if(!this.consumeEnergy(5)) return;
                 document.getElementById('modal-title').innerText = "Лес: Поиск 🍄";
                 let arr = new Array(20).fill(0); for(let i=0; i<5; i++) arr[i] = 1; arr.sort(() => Math.random() - 0.5);
                 this.mushFound = 0;
-                let html = `<div style="text-align:center; margin-bottom:10px;">Найди 5 скрытых грибов!</div><div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; font-size:40px; margin-bottom:15px;">`;
+                this.mushMistakes = 0;
+                let html = `<div style="text-align:center; margin-bottom:10px;">Найди 5 грибов! Ошибиться можно 3 раза.</div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:bold; font-size:14px;">
+                    <span id="mush-count" style="color:#4caf50;">Найдено: 0 / 5</span>
+                    <span id="mush-mistakes" style="color:#f44336;">Ошибки: 0 / 3</span>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; font-size:40px; margin-bottom:15px;">`;
                 arr.forEach((isMush, idx) => { html += `<div id="tree-${idx}" onclick="game.clickTree(${idx}, ${isMush})" style="cursor:pointer; user-select:none; text-align:center;">🌲</div>`; });
-                html += `</div><div id="mush-count" style="text-align:center; font-weight:bold; color:#4caf50;">Найдено: 0 / 5</div>`;
+                html += `</div>`;
                 document.getElementById('modal-body').innerHTML = html; document.getElementById('modal').classList.remove('hidden');
             },
             clickTree(idx, isMush) {
                 let el = document.getElementById(`tree-${idx}`);
-                if(el.innerText !== '🌲') return;
-                if(isMush) { el.innerText = '🍄'; this.mushFound++; document.getElementById('mush-count').innerText = `Найдено: ${this.mushFound} / 5`; if(this.mushFound >= 5) { this.candies += 25; this.updateUI(); setTimeout(()=>this.customAlert('Отлично!', 'Ты нашел все грибы в лесу! +25 🍬'), 300); } } 
-                else { el.innerText = '🍂'; }
+                if(el.innerText !== '🌲') return; // Если уже нажато - игнорируем
+                
+                if(isMush) { 
+                    el.innerText = '🍄'; this.mushFound++; 
+                    document.getElementById('mush-count').innerText = `Найдено: ${this.mushFound} / 5`; 
+                    if(this.mushFound >= 5) { 
+                        this.candies += 25; this.updateUI(); 
+                        setTimeout(() => this.customAlert('Отлично!', 'Ты нашел все грибы в лесу! +25 🍬'), 300); 
+                    } 
+                } else { 
+                    el.innerText = '🍂'; 
+                    this.mushMistakes++;
+                    document.getElementById('mush-mistakes').innerText = `Ошибки: ${this.mushMistakes} / 3`;
+                    if(this.mushMistakes >= 3) {
+                        setTimeout(() => this.customAlert('Ой-ой!', 'Ты слишком много раз ошибся. Грибник из тебя так себе... 🍄💨'), 300);
+                    }
+                }
             },
+
             startThimbles() {
                 if(!this.consumeEnergy(5)) return;
                 document.getElementById('modal-title').innerText = "Наперстки 🐰";
@@ -473,12 +501,10 @@
                 }, 500);
             },
 
-            // ИЗМЕНЁННЫЙ МАРКЕТПЛЕЙС 
             openMarket() {
                 document.getElementById('modal-title').innerText = "📦 MarketPlace";
                 let html = `<div style="text-align:center; margin-bottom: 10px; font-weight: bold; color: #ff6b8b;">Эксклюзивные товары!</div><div class="grid">`;
                 
-                // Рендерим премиум скины
                 for (let id in this.clothesData) {
                     if (this.clothesData[id].premium) {
                         const item = this.clothesData[id]; const isOwned = this.unlockedClothes.includes(id);
@@ -486,7 +512,6 @@
                     }
                 }
                 
-                // Рендерим эксклюзивную мебель
                 for (let id in this.shopItems) {
                     if (this.shopItems[id].marketplace) {
                         const item = this.shopItems[id]; const isOwned = this.inventory.includes(id);
@@ -502,7 +527,6 @@
                 else { const item = this.clothesData[id]; if (this.candies >= item.price) { this.candies -= item.price; this.unlockedClothes.push(id); this.currentCloth = id; this.updateUI(); this.customAlert('Успех!', 'Костюм доставлен и надет! 📦'); } else { this.customAlert('MarketPlace', 'Не хватает конфет! 🍬'); } }
             },
             
-            // Новая функция покупки мебели через маркетплейс
             buyMarketItem(id) {
                 const item = this.shopItems[id];
                 if (this.inventory.includes(id)) { this.customAlert('MarketPlace', 'Этот предмет уже доставлен! 📦'); return; }
@@ -511,7 +535,7 @@
                     this.inventory.push(id);
                     this.updateUI();
                     this.renderFurniture();
-                    this.openMarket(); // Обновляем модалку
+                    this.openMarket();
                     this.customAlert('Успех!', `${item.name} успешно доставлен курьером! 📦`);
                 } else {
                     this.customAlert('MarketPlace', 'Не хватает конфет! 🍬');
@@ -528,7 +552,6 @@
             },
             tipBot(botName) { if (this.candies >= 5) { this.candies -= 5; this.updateUI(); this.showFloatingText('-5 🍬'); this.customAlert('Отправлено!', `${botName} говорит тебе большое спасибо! ❤️`); } else { this.customAlert('Ой', 'У тебя нет столько конфет! 🍬'); } },
 
-            // Функции маркетплейс-предметов
             useTelescope() {
                 if(!this.consumeEnergy(5)) return;
                 if(Math.random() > 0.5) { this.candies += 10; this.updateUI(); this.customAlert('Телескоп 🔭', 'Ты увидел падающую звезду и загадал желание! Упало 10 🍬.'); }
@@ -557,7 +580,6 @@
                 this.customAlert('Кофемашина ☕', 'Ммм, свежий кофе! Бодрит! (+20 ⚡)');
             },
 
-            // Оракул и Плеер
             useOracle() { if(!this.consumeEnergy(5)) return; const p = ["Скоро ты найдешь много конфет... 🍬", "Берегись сгоревших пирогов на кухне! 🔥", "Твой питомец мечтает о костюме космонавта 👨‍🚀", "Пицца - самая сильная еда в игре! 🍕"]; this.customAlert('Оракул 🔮', p[Math.floor(Math.random() * p.length)]); },
             openMusicPlayer() {
                 document.getElementById('modal-title').innerText = "Магнитофон 📻";
@@ -568,8 +590,7 @@
 
             claimReward(element, amount) { this.candies += amount; this.updateUI(); element.style.display = 'none'; this.showFloatingText(`+${amount} 🍬`); },
             
-            // Старые мини-игры
-            openDoghouse() { /* Логика песика без изменений */
+            openDoghouse() {
                 document.getElementById('modal-title').innerText = "В гостях у Песика"; document.getElementById('modal-body').innerHTML = `<div style="text-align:center; color:#666; font-weight:bold;">Зажми и води по песику, чтобы погладить!</div><div id="pet-progress-bg"><div id="pet-progress-fill"></div></div><div style="text-align:center;"><div id="dog-area">🐶</div></div>`; document.getElementById('modal').classList.remove('hidden');
                 const dogArea = document.getElementById('dog-area'); this.pettingProgress = 0; let isDragging = false; let lastX = 0, lastY = 0;
                 const handleMove = (x, y) => {
@@ -695,7 +716,7 @@
                     else if(t === 'theme-ocean') { body.background = "#e0f7fa"; wall.background = "#b2ebf2"; floor.background = "#4dd0e1"; floor.borderTop = "4px solid rgba(0,0,0,0.05)"; }
                     else if(t === 'theme-forest') { body.background = "#e8f5e9"; wall.background = "#c8e6c9"; floor.background = "#81c784"; floor.borderTop = "4px solid #4caf50"; }
                     else if(t === 'theme-gold') { body.background = "#fff8e1"; wall.background = "#ffecb3"; floor.background = "#ffd54f"; floor.borderTop = "4px solid #ffca28"; }
-                } this.updateUI(); // Убрали здесь сохранение темы в сторадж, оно в updateUI
+                } this.updateUI();
             },
 
             customAlert(title, text) {
@@ -732,7 +753,6 @@
 
             buy(id) { const item = this.shopItems[id]; if (this.candies >= item.price && !this.inventory.includes(id)) { this.candies -= item.price; this.inventory.push(id); this.updateUI(); this.renderFurniture(); this.openShop(); } },
 
-            // ИЗМЕНЕННЫЙ МАГАЗИН: Скрываем товары из маркетплейса
             openShop() {
                 if (this.isSleeping) { this.showFloatingText('Zzz...'); return; }
                 if (this.currentExcursion) { this.customAlert('Магазин 🛒', 'Питомец сейчас на улице! Вернитесь домой, чтобы открыть магазин.'); return; }
@@ -742,7 +762,6 @@
                 let hasItems = false;
                 
                 for (let id in this.shopItems) {
-                    // Проверяем комнату И отсутствие флага marketplace
                     if (this.shopItems[id].room === currentRoomName && !this.shopItems[id].marketplace) {
                         hasItems = true; const isOwned = this.inventory.includes(id);
                         html += `<div class="card ${isOwned ? 'active' : ''}" onclick="game.buy('${id}')"><div style="font-size:40px">${this.shopItems[id].emoji}</div><b style="color:#ff6b8b">${this.shopItems[id].name}</b><br><small>${isOwned ? 'Куплено' : this.shopItems[id].price + ' 🍬'}</small></div>`;
