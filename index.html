@@ -33,7 +33,6 @@
             font-family: sans-serif; 
             background: #ffeaef; 
             transition: background 0.3s; 
-            /* Дополнительная защита от зума на iOS */
             touch-action: none;
         }
 
@@ -58,7 +57,13 @@
         .pet-wrapper { position: relative; animation: float 3s infinite ease-in-out; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
         #pet { font-size: 130px; transition: filter 0.1s; }
         #pet-clothes { position: absolute; left: 50%; transform: translateX(-50%); font-size: 75px; z-index: 3; pointer-events: none; text-align: center; width: 100px; transition: 0.2s; }
-        #pet-container:active .pet-wrapper { transform: scale(0.9); }
+        
+        /* Анимация прыжков на батуте */
+        .pet-jumping { animation: jump 0.6s infinite ease-in-out; }
+        @keyframes jump {
+            0%, 100% { transform: translateY(0) scale(1, 1); }
+            50% { transform: translateY(-100px) scale(0.9, 1.1); }
+        }
 
         #furniture-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
         .placed-item { position: absolute; pointer-events: auto; text-align: center; font-size: 55px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); cursor: pointer; transition: transform 0.1s, filter 0.1s; }
@@ -69,6 +74,20 @@
         .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 35px; padding: 25px; max-height: 80vh; overflow-y: auto; overflow-x: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2); position: relative; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: #ff6b8b; z-index: 2; position: relative; }
         .close-btn { background: #fff0f3; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; color: #ff8fa3; }
+
+        /* Стили для кофеварки */
+        #coffee-progress { width: 100%; height: 20px; background: #eee; border-radius: 10px; margin-top: 20px; overflow: hidden; }
+        #coffee-fill { height: 100%; width: 0%; background: #6f4e37; transition: width 0.1s; }
+
+        /* Стили для телескопа */
+        #star-game { position: relative; width: 100%; height: 200px; background: #0b0f19; border-radius: 15px; margin-top: 10px; overflow: hidden; }
+        .falling-star { position: absolute; font-size: 30px; cursor: pointer; animation: starFall 1.2s linear forwards; }
+        @keyframes starFall { 
+            0% { transform: translateY(-50px) rotate(0deg); opacity: 1; } 
+            100% { transform: translateY(250px) rotate(360deg); opacity: 0; } 
+        }
+
+        #blocker { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; display: none; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; z-index: 2; position: relative; }
         .card { background: #f8f9fa; border-radius: 20px; padding: 15px; text-align: center; cursor: pointer; border: 3px solid transparent; font-weight: bold; color: #333; transition: 0.2s; }
@@ -115,6 +134,7 @@
     </style>
 </head>
 <body>
+    <div id="blocker"></div>
     <div id="app">
         <div class="room-bg">
             <div class="wall"></div>
@@ -134,7 +154,7 @@
         </div>
 
         <div id="pet-container" onclick="game.clickPet()">
-            <div class="pet-wrapper">
+            <div class="pet-wrapper" id="pet-wrapper-id">
                 <div id="pet-clothes"></div>
                 <div id="pet">🤖</div>
             </div>
@@ -230,10 +250,11 @@
                 'stove': { room: 'kitchen', name: 'Плита', price: 35, emoji: '♨️', top: '48%', left: '70%', action: () => game.openStoveMG() },
                 'bowl': { room: 'kitchen', name: 'Миска', price: 15, emoji: '🥣', top: '75%', left: '25%', action: () => game.openBowl() },
 
-                'telescope': { room: 'yard', name: 'Звезды', price: 60, emoji: '🔭', top: '30%', left: '50%', marketplace: true, action: () => game.useTelescope() },
-                'trampoline': { room: 'yard', name: 'Батут', price: 80, emoji: '🤸', top: '75%', left: '50%', marketplace: true, action: () => game.useTrampoline() },
+                /* ИСПРАВЛЕННЫЕ ССЫЛКИ НА ФУНКЦИИ */
+                'telescope': { room: 'yard', name: 'Звезды', price: 60, emoji: '🔭', top: '30%', left: '50%', marketplace: true, action: () => game.playTelescope() },
+                'trampoline': { room: 'yard', name: 'Батут', price: 80, emoji: '🤸', top: '75%', left: '50%', marketplace: true, action: () => game.startJump() },
                 'blender': { room: 'kitchen', name: 'Блендер', price: 40, emoji: '🥤', top: '48%', left: '40%', marketplace: true, action: () => game.useBlender() },
-                'coffeemachine': { room: 'kitchen', name: 'Кофе', price: 50, emoji: '☕', top: '65%', left: '55%', marketplace: true, action: () => game.useCoffeeMachine() }
+                'coffeemachine': { room: 'kitchen', name: 'Кофе', price: 50, emoji: '☕', top: '65%', left: '55%', marketplace: true, action: () => game.makeCoffee() }
             },
 
             petList: ['🤖', '🐱', '🐶', '🐹', '🐰', '🦊', '🦄', '🐲', '👽', '👻'],
@@ -304,7 +325,6 @@
                         body.background = "#FFFACD"; wall.background = "#FFFACD"; floor.background = "#F4A460"; floor.borderTop = "4px solid #D2691E"; wall.boxShadow = "none";
                         document.getElementById('delivery-layer').innerHTML = '';
                     } else {
-                        // ИСПРАВЛЕНИЕ: Гарантированное применение сохраненной темы при входе в спальню
                         this.applyTheme(this.theme);
                         document.getElementById('delivery-layer').innerHTML = '';
                     }
@@ -368,6 +388,106 @@
             },
             closePhoneStyles() { document.getElementById('modal-container').classList.remove('phone-bg'); document.getElementById('modal-header').classList.remove('phone-header'); },
 
+            /* ИСПРАВЛЕННЫЙ ТЕЛЕСКОП */
+            playTelescope() {
+                if(!this.consumeEnergy(10)) return;
+                document.getElementById('modal-title').innerText = "Звездопад 🌠";
+                document.getElementById('modal-body').innerHTML = `
+                    <p style="text-align:center;">Успей нажать на звезду!</p>
+                    <div id="star-game"></div>
+                `;
+                document.getElementById('modal').classList.remove('hidden');
+
+                const container = document.getElementById('star-game');
+                
+                this.mgTimeout = setTimeout(() => {
+                    if(document.getElementById('modal').classList.contains('hidden')) return;
+                    
+                    const star = document.createElement('div');
+                    star.className = 'falling-star';
+                    star.innerText = '⭐';
+                    star.style.left = Math.random() * 80 + 10 + '%';
+                    
+                    star.onclick = () => {
+                        this.candies += 30;
+                        this.updateUI();
+                        star.remove();
+                        this.customAlert("Успех!", "Звезда поймана! +30 🍬");
+                    };
+                    
+                    container.appendChild(star);
+                    
+                    this.mgTimeout = setTimeout(() => {
+                        if(star.parentNode) {
+                            star.remove();
+                            this.customAlert("Упс...", "Звезда улетела!");
+                        }
+                    }, 1200);
+                }, 500);
+            },
+
+            /* ИСПРАВЛЕННЫЙ БАТУТ */
+            startJump() {
+                if(!this.consumeEnergy(15)) return;
+                
+                this.close();
+                const petWrapper = document.getElementById('pet-wrapper-id');
+                const blocker = document.getElementById('blocker');
+                
+                petWrapper.classList.add('pet-jumping');
+                blocker.style.display = 'block'; 
+                
+                let jumps = 0;
+                this.mgInterval = setInterval(() => {
+                    jumps++;
+                    this.showFloatingText("ЮХУ! 🤸");
+                    if(jumps >= 4) {
+                        clearInterval(this.mgInterval);
+                        petWrapper.classList.remove('pet-jumping');
+                        blocker.style.display = 'none';
+                        this.candies += 25;
+                        this.updateUI();
+                        this.customAlert("Отлично!", "Разминка окончена! +25 🍬");
+                    }
+                }, 600);
+            },
+
+            /* ИСПРАВЛЕННАЯ КОФЕВАРКА */
+            makeCoffee() {
+                if(this.energy >= 100) return this.customAlert("Бодрость", "Энергия и так на максимуме! ⚡");
+                
+                document.getElementById('modal-title').innerText = "Варка кофе ☕";
+                document.getElementById('modal-body').innerHTML = `
+                    <div style="text-align:center; font-weight:bold;">Ожидайте...</div>
+                    <div id="coffee-progress"><div id="coffee-fill"></div></div>
+                `;
+                document.getElementById('modal').classList.remove('hidden');
+
+                const fill = document.getElementById('coffee-fill');
+                let progress = 0;
+                this.mgInterval = setInterval(() => {
+                    progress += 4;
+                    if(fill) fill.style.width = progress + '%';
+                    if(progress >= 100) {
+                        clearInterval(this.mgInterval);
+                        this.energy = Math.min(100, this.energy + 40);
+                        this.updateUI();
+                        setTimeout(() => this.customAlert("Готово!", "Кофе восстановил +40 ⚡"), 200);
+                    }
+                }, 100);
+            },
+
+            useBlender() {
+                document.getElementById('modal-title').innerText = "Блендер 🥤";
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center;">Сделай Смузи (+40⚡)!<br><br>Нужно: 1 🍎 и 1 🫐<br>У тебя: ${this.foods['apple']||0} 🍎 и ${this.foods['berry']||0} 🫐</div><button class="mg-btn" onclick="game.craftSmoothie()">Смешать!</button>`;
+                document.getElementById('modal').classList.remove('hidden');
+            },
+            craftSmoothie() {
+                if((this.foods['apple']||0) >= 1 && (this.foods['berry']||0) >= 1) {
+                    this.foods['apple']--; this.foods['berry']--; this.foods['drink'] = (this.foods['drink']||0) + 1; this.updateUI(); this.customAlert('Блендер', 'Готово! Смузи (в виде Энергетика 🥫) добавлено в Миску!');
+                } else { this.customAlert('Блендер', 'Не хватает ингредиентов!'); }
+            },
+
             openNyashEats() {
                 document.getElementById('modal-title').innerText = "🍔 NyashEats";
                 if (this.activeDelivery && !this.activeDelivery.isSpawned) { document.getElementById('modal-body').innerHTML = `<div style="text-align:center; padding: 20px;"><div style="font-size: 50px; margin-bottom: 10px;">🛵</div><b>Курьер в пути!</b><br><small>Ждите посылку во Дворе.</small></div>`; return; } 
@@ -419,7 +539,6 @@
             clickTree(idx, isMush) {
                 let el = document.getElementById(`tree-${idx}`);
                 if(el.innerText !== '🌲') return; 
-                
                 if(isMush) { 
                     el.innerText = '🍄'; this.mushFound++; 
                     document.getElementById('mush-count').innerText = `Найдено: ${this.mushFound} / 5`; 
@@ -428,11 +547,10 @@
                         setTimeout(() => this.customAlert('Отлично!', 'Ты нашел все грибы в лесу! +25 🍬'), 300); 
                     } 
                 } else { 
-                    el.innerText = '🍂'; 
-                    this.mushMistakes++;
+                    el.innerText = '🍂'; this.mushMistakes++;
                     document.getElementById('mush-mistakes').innerText = `Ошибки: ${this.mushMistakes} / 3`;
                     if(this.mushMistakes >= 3) {
-                        setTimeout(() => this.customAlert('Ой-ой!', 'Ты слишком много раз ошибся. Грибник из тебя так себе... 🍄💨'), 300);
+                        setTimeout(() => this.customAlert('Ой-ой!', 'Ты слишком много раз ошибся. 🍄💨'), 300);
                     }
                 }
             },
@@ -445,428 +563,231 @@
             },
             guessThimble(choice) {
                 if(choice === this.thimbleAns) { this.foods['berry'] = (this.foods['berry']||0) + 1; this.updateUI(); this.customAlert('Победа!', 'Ты угадал! Зайчик подарил тебе Ягоды 🫐!'); } 
-                else { this.customAlert('Упс!', 'Пусто! Шарик был в другом стакане.'); }
-            },
-            startBeachCastle() {
-                if(!this.consumeEnergy(5)) return;
-                document.getElementById('modal-title').innerText = "Пляж: Замок 🏰";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; margin-bottom:15px;">Строй быстро! Остерегайся волн!</div><div id="beach-mg-item" style="font-size:80px; text-align:center; cursor:pointer; user-select:none; transition:0.2s;" onclick="game.beachMGTap()">🪣</div><div style="width:100%; height:20px; background:#ddd; border-radius:10px; overflow:hidden; margin-top:10px;"><div id="beach-bar" style="width:0%; height:100%; background:#feca57; transition:0.1s;"></div></div>`;
-                this.mgClicks = 0; document.getElementById('modal').classList.remove('hidden');
-                this.mgInterval = setInterval(() => {
-                    if(Math.random() < 0.15) { 
-                        this.mgClicks = Math.max(0, this.mgClicks - 30); document.getElementById('beach-bar').style.width = this.mgClicks + '%'; 
-                        let bItem = document.getElementById('beach-mg-item'); bItem.innerText = '🌊'; setTimeout(() => { if(bItem) bItem.innerText = '🪣'; }, 500);
-                    }
-                }, 1000);
-            },
-            beachMGTap() {
-                this.mgClicks += 10; document.getElementById('beach-bar').style.width = this.mgClicks + '%';
-                if(this.mgClicks >= 100) { this.clearMinigames(); this.candies += 20; this.updateUI(); this.customAlert('Шедевр!', 'Замок построен! В песке было 20 🍬!'); }
-            },
-            startDolphin() {
-                if(!this.consumeEnergy(5)) return;
-                document.getElementById('modal-title').innerText = "Мяч с Дельфином 🐬";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; font-size:50px;">🐬</div><div id="dolphin-score" style="text-align:center; font-weight:bold; margin-bottom:10px;">Отбито: 0 / 5</div><div style="position:relative; width:100%; height:200px; background:#4fc3f7; border-radius:10px; overflow:hidden; border:3px solid #0288d1;"><div id="d-ball" style="position:absolute; top:0; left:50%; transform:translateX(-50%); font-size:40px; cursor:pointer;" onclick="game.hitDolphinBall()">⚽</div></div>`;
-                document.getElementById('modal').classList.remove('hidden');
-                this.dolphinScore = 0; this.dBallY = 0;
-                this.mgInterval = setInterval(() => {
-                    this.dBallY += 4; let b = document.getElementById('d-ball');
-                    if(b) { b.style.top = this.dBallY + 'px'; if(this.dBallY > 180) { this.clearMinigames(); this.customAlert('Проигрыш', 'Мяч упал в воду! 💦'); } }
-                }, 30);
-            },
-            hitDolphinBall() {
-                this.dolphinScore++; document.getElementById('dolphin-score').innerText = `Отбито: ${this.dolphinScore} / 5`; this.dBallY = 0;
-                let b = document.getElementById('d-ball'); if(b) { b.style.left = (Math.random() * 80 + 10) + '%'; }
-                if(this.dolphinScore >= 5) { this.clearMinigames(); this.candies += 20; this.updateUI(); this.customAlert('Ура!', 'Отличная игра с дельфином! +20 🍬'); }
-            },
-            startAmusementTarget() {
-                if(!this.consumeEnergy(5)) return;
-                document.getElementById('modal-title').innerText = "Тир 🎯";
-                document.getElementById('modal-body').innerHTML = `<div style="position:relative; width:100%; height:150px; background:#e1bee7; border-radius:15px; overflow:hidden;"><div id="target" style="position:absolute; top:40%; left:0; font-size:40px; cursor:pointer;" onclick="game.targetHit()">🎈</div></div>`;
-                document.getElementById('modal').classList.remove('hidden');
-                let pos = 0; let dir = 1;
-                this.mgInterval = setInterval(() => { pos += 2 * dir; if(pos > 90) dir = -1; if(pos < 0) dir = 1; const t = document.getElementById('target'); if(t) t.style.left = pos + '%'; }, 20);
-            },
-            targetHit() { this.clearMinigames(); this.candies += 25; this.updateUI(); this.customAlert('В яблочко!', 'Меткий выстрел! Приз: 25 🍬!'); },
-            startClawMachine() {
-                if(this.candies < 10) { this.customAlert('Хватайка', 'Нужно 10 🍬 для запуска!'); return; }
-                if(!this.consumeEnergy(5)) return;
-                this.candies -= 10; this.updateUI();
-                document.getElementById('modal-title').innerText = "Хватайка 🕹️ (-10🍬)";
-                document.getElementById('modal-body').innerHTML = `<div style="position:relative; width:100%; height:200px; background:#f3e5f5; border:3px solid #ab47bc; border-radius:10px; overflow:hidden; margin-bottom:10px;"><div id="claw-crane" style="position:absolute; top:0; left:0; font-size:50px; transition:top 0.5s;">⛓️爪</div><div style="position:absolute; bottom:0; width:100%; text-align:center; font-size:40px; border-top:2px solid #ab47bc; padding-top:5px; background:rgba(255,255,255,0.5);">🧸 🍬 🎁 🍎</div></div><button class="mg-btn" onclick="game.dropClaw()">ХВАТАТЬ!</button>`;
-                document.getElementById('modal').classList.remove('hidden');
-                this.clawPos = 0; this.clawDir = 1; this.clawActive = true;
-                this.mgInterval = setInterval(() => { if(!this.clawActive) return; this.clawPos += 3 * this.clawDir; if(this.clawPos > 85) this.clawDir = -1; if(this.clawPos < 0) this.clawDir = 1; let c = document.getElementById('claw-crane'); if(c) c.style.left = this.clawPos + '%'; }, 30);
-            },
-            dropClaw() {
-                if(!this.clawActive) return; this.clawActive = false; let c = document.getElementById('claw-crane'); c.style.top = '120px';
-                setTimeout(() => {
-                    c.style.top = '0px';
-                    setTimeout(() => {
-                        this.clearMinigames(); let r = Math.random();
-                        if(r < 0.4) this.customAlert('Хватайка', 'Пусто! Ничего не поймали 😢');
-                        else if(r < 0.7) { this.candies += 20; this.updateUI(); this.customAlert('Хватайка', 'Ура! Ты вытащил 20 🍬!'); }
-                        else if(r < 0.9) { this.foods['apple'] = (this.foods['apple']||0)+1; this.customAlert('Хватайка', 'Ты вытащил Яблоко 🍎!'); }
-                        else { this.foods['cake'] = (this.foods['cake']||0)+1; this.customAlert('Хватайка', 'Ого! Торт 🍰 твой!'); }
-                    }, 500);
-                }, 500);
+                else { this.customAlert('Упс!', 'Пусто!'); }
             },
 
             openMarket() {
                 document.getElementById('modal-title').innerText = "📦 MarketPlace";
                 let html = `<div style="text-align:center; margin-bottom: 10px; font-weight: bold; color: #ff6b8b;">Эксклюзивные товары!</div><div class="grid">`;
-                
                 for (let id in this.clothesData) {
                     if (this.clothesData[id].premium) {
                         const item = this.clothesData[id]; const isOwned = this.unlockedClothes.includes(id);
-                        html += `<div class="card ${isOwned ? 'active' : ''}" onclick="game.buyPremiumCloth('${id}')"><div style="font-size:35px">${item.emoji}</div><b style="color:#ff6b8b">${item.name}</b><br><small style="color:red; font-weight:bold;">Костюм</small><br><small>${isOwned ? 'Куплено' : item.price + ' 🍬'}</small></div>`;
+                        html += `<div class="card ${isOwned ? 'active' : ''}" onclick="game.buyPremiumCloth('${id}')"><div style="font-size:35px">${item.emoji}</div><b style="color:#ff6b8b">${item.name}</b><br><small>${isOwned ? 'Куплено' : item.price + ' 🍬'}</small></div>`;
                     }
                 }
-                
                 for (let id in this.shopItems) {
                     if (this.shopItems[id].marketplace) {
                         const item = this.shopItems[id]; const isOwned = this.inventory.includes(id);
-                        html += `<div class="card ${isOwned ? 'active' : ''}" onclick="game.buyMarketItem('${id}')"><div style="font-size:35px">${item.emoji}</div><b style="color:#ff6b8b">${item.name}</b><br><small style="color:red; font-weight:bold;">${item.room === 'yard' ? 'Двор' : 'Кухня'}</small><br><small>${isOwned ? 'Доставлено' : item.price + ' 🍬'}</small></div>`;
+                        html += `<div class="card ${isOwned ? 'active' : ''}" onclick="game.buyMarketItem('${id}')"><div style="font-size:35px">${item.emoji}</div><b style="color:#ff6b8b">${item.name}</b><br><small>${isOwned ? 'Доставлено' : item.price + ' 🍬'}</small></div>`;
                     }
                 }
-                
                 html += '</div>'; document.getElementById('modal-body').innerHTML = html;
             },
-            
             buyPremiumCloth(id) {
                 if (this.unlockedClothes.includes(id)) { this.currentCloth = id; this.updateUI(); this.customAlert('MarketPlace', 'Скин надет! 🤩'); } 
-                else { const item = this.clothesData[id]; if (this.candies >= item.price) { this.candies -= item.price; this.unlockedClothes.push(id); this.currentCloth = id; this.updateUI(); this.customAlert('Успех!', 'Костюм доставлен и надет! 📦'); } else { this.customAlert('MarketPlace', 'Не хватает конфет! 🍬'); } }
+                else { const item = this.clothesData[id]; if (this.candies >= item.price) { this.candies -= item.price; this.unlockedClothes.push(id); this.currentCloth = id; this.updateUI(); this.customAlert('Успех!', 'Костюм куплен! 📦'); } else { this.customAlert('MarketPlace', 'Не хватает конфет! 🍬'); } }
             },
-            
             buyMarketItem(id) {
                 const item = this.shopItems[id];
-                if (this.inventory.includes(id)) { this.customAlert('MarketPlace', 'Этот предмет уже доставлен! 📦'); return; }
+                if (this.inventory.includes(id)) { this.customAlert('MarketPlace', 'Уже куплено! 📦'); return; }
                 if (this.candies >= item.price) {
-                    this.candies -= item.price;
-                    this.inventory.push(id);
-                    this.updateUI();
-                    this.renderFurniture();
-                    this.openMarket();
-                    this.customAlert('Успех!', `${item.name} успешно доставлен курьером! 📦`);
-                } else {
-                    this.customAlert('MarketPlace', 'Не хватает конфет! 🍬');
-                }
+                    this.candies -= item.price; this.inventory.push(id); this.updateUI(); this.renderFurniture(); this.openMarket();
+                    this.customAlert('Успех!', `${item.name} доставлен! 📦`);
+                } else { this.customAlert('MarketPlace', 'Не хватает конфет! 🍬'); }
             },
 
             openNyashgram() {
                 document.getElementById('modal-title').innerText = "💬 Nyashgram";
-                const msgs = [{ sender: 'Пёс 🐶', text: 'Гав! Пошли гулять!', isBot: true, canTip: true }, { sender: 'Кот 🐱', text: 'Скинь конфет...', isBot: true, canTip: true }, { sender: 'Система ⚙️', text: 'Подарок!', reward: 5, isBot: true }, { sender: 'Оракул 🔮', text: 'Звезды говорят, сегодня отличный день.', isBot: true }];
-                const shuffled = msgs.sort(() => 0.5 - Math.random()).slice(0, 3);
+                const msgs = [{ sender: 'Пёс 🐶', text: 'Гав! Пошли гулять!', isBot: true, canTip: true }, { sender: 'Кот 🐱', text: 'Скинь конфет...', isBot: true, canTip: true }];
                 let html = `<div style="height: 300px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;">`;
-                shuffled.forEach(msg => { html += `<div class="chat-msg bot"><b>${msg.sender}</b><br>${msg.text} ${msg.reward ? `<br><div class="chat-reward" onclick="game.claimReward(this, ${msg.reward})">Забрать +${msg.reward} 🍬</div>` : ''} ${msg.canTip ? `<br><div class="chat-action" onclick="game.tipBot('${msg.sender}')">Отправить 5 🍬</div>` : ''}</div>`; });
-                html += `<div class="chat-msg" style="align-self: flex-end; background: #e3f2fd; border: 1px solid #bbdefb;"><b>Ты</b><br>Отлично! 😎</div></div>`; document.getElementById('modal-body').innerHTML = html;
+                msgs.forEach(msg => { html += `<div class="chat-msg bot"><b>${msg.sender}</b><br>${msg.text} ${msg.canTip ? `<br><div class="chat-action" onclick="game.tipBot('${msg.sender}')">Отправить 5 🍬</div>` : ''}</div>`; });
+                html += `<div class="chat-msg" style="align-self: flex-end; background: #e3f2fd;"><b>Ты</b><br>Лови! 😎</div></div>`; 
+                document.getElementById('modal-body').innerHTML = html;
             },
-            tipBot(botName) { if (this.candies >= 5) { this.candies -= 5; this.updateUI(); this.showFloatingText('-5 🍬'); this.customAlert('Отправлено!', `${botName} говорит тебе большое спасибо! ❤️`); } else { this.customAlert('Ой', 'У тебя нет столько конфет! 🍬'); } },
+            tipBot(botName) { if (this.candies >= 5) { this.candies -= 5; this.updateUI(); this.customAlert('Отправлено!', `${botName} доволен! ❤️`); } },
 
-            // ИНТЕРАКТИВ: Телескоп
-                    playTelescope() {
-                if(this.energy < 10) return this.customAlert("Усталость 🥱', 'Мало энергии! Отправь питомца спать 🛏️ или покорми.");
-                this.energy -= 10;
-                this.updateUI();
-
-                document.getElementById('modal-title').innerText = "Звездопад 🌠";
-                document.getElementById('modal-body').innerHTML = `
-                    <p style="text-align:center;">Успей нажать на звезду!</p>
-                    <div id="star-game"></div>
-                `;
-                document.getElementById('modal').classList.remove('hidden');
-
-                const container = document.getElementById('star-game');
-                
-                setTimeout(() => {
-                    if(document.getElementById('modal').classList.contains('hidden')) return;
-                    
-                    const star = document.createElement('div');
-                    star.className = 'falling-star';
-                    star.innerText = '⭐';
-                    star.style.left = Math.random() * 80 + 10 + '%';
-                    
-                    star.onclick = () => {
-                        this.candies += 30;
-                        this.updateUI();
-                        star.remove();
-                        this.customAlert("Успех!", "Звезда поймана! +30 🍬");
-                    };
-                    
-                    container.appendChild(star);
-                    
-                    setTimeout(() => {
-                        if(star.parentNode) {
-                            star.remove();
-                            this.customAlert("Упс...", "Звезда улетела!");
-                        }
-                    }, 1200);
-                }, 500);
-            },
-
-            startJump() {
-                if(this.energy < 15) return this.customAlert("Усталость 🥱', 'Мало энергии! Отправь питомца спать 🛏️ или покорми.");
-                
-                this.energy -= 15;
-                this.updateUI();
-                this.close();
-
-                const pet = document.getElementById('pet-container');
-                const blocker = document.getElementById('blocker');
-                
-                pet.classList.add('pet-jumping');
-                blocker.style.display = 'block'; // Блокировка экрана на время прыжков
-                
-                let jumps = 0;
-                const interval = setInterval(() => {
-                    jumps++;
-                    this.showFloatingText("ЮХУ! 🤸");
-                    if(jumps >= 4) {
-                        clearInterval(interval);
-                        pet.classList.remove('pet-jumping');
-                        blocker.style.display = 'none'; // Снимаем блокировку
-                        this.candies += 25;
-                        this.updateUI();
-                        this.customAlert("Отлично!", "Разминка окончена! +25 🍬");
-                    }
-                }, 600);
-            },
-
-            useBlender() {
-                document.getElementById('modal-title').innerText = "Блендер 🥤";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center;">Сделай Смузи (+40⚡)!<br><br>Нужно: 1 🍎 и 1 🫐<br>У тебя: ${this.foods['apple']||0} 🍎 и ${this.foods['berry']||0} 🫐</div><button class="mg-btn" onclick="game.craftSmoothie()">Смешать!</button>`;
-                document.getElementById('modal').classList.remove('hidden');
-            },
-            craftSmoothie() {
-                if((this.foods['apple']||0) >= 1 && (this.foods['berry']||0) >= 1) {
-                    this.foods['apple']--; this.foods['berry']--; this.foods['drink'] = (this.foods['drink']||0) + 1; this.updateUI(); this.customAlert('Блендер', 'Готово! Смузи (в виде Энергетика 🥫) добавлено в Миску!');
-                } else { this.customAlert('Блендер', 'Не хватает ингредиентов!'); }
-            },
-
-            // ИНТЕРАКТИВ: Кофемашина
-            makeCoffee() {
-                if(this.energy >= 100) return this.customAlert("Бодрость", "Энергия и так на максимуме! ⚡");
-                
-                document.getElementById('modal-title').innerText = "Варка кофе ☕";
-                document.getElementById('modal-body').innerHTML = `
-                    <div style="text-align:center; font-weight:bold;">Ожидайте...</div>
-                    <div id="coffee-progress"><div id="coffee-fill"></div></div>
-                `;
-                document.getElementById('modal').classList.remove('hidden');
-
-                const fill = document.getElementById('coffee-fill');
-                let progress = 0;
-                const int = setInterval(() => {
-                    progress += 4;
-                    fill.style.width = progress + '%';
-                    if(progress >= 100) {
-                        clearInterval(int);
-                        this.energy = Math.min(100, this.energy + 40);
-                        this.updateUI();
-                        setTimeout(() => this.customAlert("Готово!", "Кофе восстановил +40 ⚡"), 200);
-                    }
-                }, 100);
-            },
-
-            useOracle() { if(!this.consumeEnergy(5)) return; const p = ["Скоро ты найдешь много конфет... 🍬", "Берегись сгоревших пирогов на кухне! 🔥", "Твой питомец мечтает о костюме космонавта 👨‍🚀", "Пицца - самая сильная еда в игре! 🍕"]; this.customAlert('Оракул 🔮', p[Math.floor(Math.random() * p.length)]); },
+            useOracle() { if(!this.consumeEnergy(5)) return; const p = ["Скоро ты найдешь много конфет... 🍬", "Берегись сгоревших пирогов! 🔥"]; this.customAlert('Оракул 🔮', p[Math.floor(Math.random() * p.length)]); },
             openMusicPlayer() {
                 document.getElementById('modal-title').innerText = "Магнитофон 📻";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; color:#666; margin-bottom:15px;">Выбери пластинку для фона:</div><div class="grid"><button class="mg-btn" onclick="game.playTrack('https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3', 'Lo-Fi Chill ☕')">Lo-Fi Chill ☕</button><button class="mg-btn" onclick="game.playTrack('https://files.freemusicarchive.org/storage-freemusicarchive-org/music/WFMU/Broke_For_Free/Directionless_EP/Broke_For_Free_-_01_-_Night_Owl.mp3', '8-bit Adventure 👾')">Indie Beat 👾</button><button class="mg-btn" onclick="game.stopMusic()" style="background: #95a5a6;">Остановить 🔇</button><button class="mg-btn" onclick="game.playTrack('https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Frenic/Mimesis/Frenic_-_03_-_Alright.mp3', 'NYASH Beat 🎤')" style="background: #8e44ad;">NYASH Beat 🎤</button></div><div id="now-playing" style="margin-top:20px; text-align:center; font-weight:bold; color:#ff6b8b;">${this.audioPlayer.src ? 'Музыка играет 🎶' : 'Ничего не играет'}</div>`; document.getElementById('modal').classList.remove('hidden');
+                document.getElementById('modal-body').innerHTML = `<div class="grid"><button class="mg-btn" onclick="game.playTrack('https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3', 'Lo-Fi')">Lo-Fi ☕</button><button class="mg-btn" onclick="game.stopMusic()">Стоп 🔇</button></div>`; 
+                document.getElementById('modal').classList.remove('hidden');
             },
-            playTrack(url, name) { this.audioPlayer.src = url; this.audioPlayer.loop = true; this.audioPlayer.play(); const playingText = document.getElementById('now-playing'); if (playingText) playingText.innerText = `🎶 Сейчас играет: ${name}`; this.showFloatingText('🎶 Музыка включена!'); },
-            stopMusic() { this.audioPlayer.pause(); this.audioPlayer.currentTime = 0; this.audioPlayer.src = ""; const p = document.getElementById('now-playing'); if(p) p.innerText = 'Ничего не играет'; },
+            playTrack(url, name) { this.audioPlayer.src = url; this.audioPlayer.loop = true; this.audioPlayer.play(); this.showFloatingText('🎶 Музыка!'); },
+            stopMusic() { this.audioPlayer.pause(); },
 
-            claimReward(element, amount) { this.candies += amount; this.updateUI(); element.style.display = 'none'; this.showFloatingText(`+${amount} 🍬`); },
-            
             openDoghouse() {
-                document.getElementById('modal-title').innerText = "В гостях у Песика"; document.getElementById('modal-body').innerHTML = `<div style="text-align:center; color:#666; font-weight:bold;">Зажми и води по песику, чтобы погладить!</div><div id="pet-progress-bg"><div id="pet-progress-fill"></div></div><div style="text-align:center;"><div id="dog-area">🐶</div></div>`; document.getElementById('modal').classList.remove('hidden');
-                const dogArea = document.getElementById('dog-area'); this.pettingProgress = 0; let isDragging = false; let lastX = 0, lastY = 0;
-                const handleMove = (x, y) => {
-                    if (!isDragging) return; const deltaX = Math.abs(x - lastX); const deltaY = Math.abs(y - lastY);
-                    if (deltaX > 2 || deltaY > 2) {
-                        this.pettingProgress += 1.5; document.getElementById('pet-progress-fill').style.width = Math.min(100, this.pettingProgress) + '%';
-                        if (Math.random() < 0.1) { const heart = document.createElement('div'); heart.className = 'floating-heart'; heart.innerText = '❤️'; heart.style.left = (Math.random() * 80 + 10) + '%'; heart.style.top = (Math.random() * 80 + 10) + '%'; dogArea.appendChild(heart); setTimeout(() => heart.remove(), 1000); }
-                        if (this.pettingProgress >= 100) { isDragging = false; this.energy = Math.min(100, this.energy + 20); this.updateUI(); this.customAlert('Хороший мальчик!', 'Песик рад! (+20 ⚡)'); }
-                    } lastX = x; lastY = y;
+                document.getElementById('modal-title').innerText = "В гостях у Песика"; 
+                document.getElementById('modal-body').innerHTML = `<div id="pet-progress-bg"><div id="pet-progress-fill"></div></div><div style="text-align:center;"><div id="dog-area">🐶</div></div>`; 
+                document.getElementById('modal').classList.remove('hidden');
+                const dogArea = document.getElementById('dog-area'); this.pettingProgress = 0; let isDragging = false;
+                const handleMove = () => {
+                    if (!isDragging) return; this.pettingProgress += 2;
+                    document.getElementById('pet-progress-fill').style.width = Math.min(100, this.pettingProgress) + '%';
+                    if (this.pettingProgress >= 100) { isDragging = false; this.energy = Math.min(100, this.energy + 20); this.updateUI(); this.customAlert('Радость!', 'Песик рад! (+20 ⚡)'); }
                 };
-                dogArea.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; }); window.addEventListener('mouseup', () => { isDragging = false; }); dogArea.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
-                dogArea.addEventListener('touchstart', (e) => { isDragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }); window.addEventListener('touchend', () => { isDragging = false; }); dogArea.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); });
+                dogArea.onmousedown = () => isDragging = true; window.onmouseup = () => isDragging = false; dogArea.onmousemove = handleMove;
+                dogArea.ontouchstart = () => isDragging = true; window.ontouchend = () => isDragging = false; dogArea.ontouchmove = (e) => { e.preventDefault(); handleMove(); };
             },
 
             openHammockMG() {
-                if (!this.consumeEnergy(10)) return; document.getElementById('modal-title').innerText = "Гамак (Ловец!)";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; color:#666; margin-bottom:10px;">Двигай гамак пальцем!</div><div id="hammock-score" style="font-weight:bold; color:#ff6b8b; text-align:center; margin-bottom:5px;">Счет: 0 / 10</div><div id="hammock-game-area"><div id="hammock-player">🛶</div></div>`; document.getElementById('modal').classList.remove('hidden');
-                const gameArea = document.getElementById('hammock-game-area'); const player = document.getElementById('hammock-player'); this.mgScore = 0; this.mgActive = true; this.mgItems = []; let playerX = gameArea.clientWidth / 2;
-                const movePlayer = (clientX) => { const rect = gameArea.getBoundingClientRect(); let x = clientX - rect.left; x = Math.max(30, Math.min(x, rect.width - 30)); playerX = x; player.style.left = x + 'px'; };
-                gameArea.addEventListener('touchmove', (e) => { e.preventDefault(); movePlayer(e.touches[0].clientX); }); gameArea.addEventListener('mousemove', (e) => { if(e.buttons > 0) movePlayer(e.clientX); });
-                this.mgInterval = setInterval(() => { if(!this.mgActive) return; const item = document.createElement('div'); item.className = 'falling-item'; item.innerText = Math.random() > 0.2 ? '🍬' : '🍎'; item.style.left = Math.random() * (gameArea.clientWidth - 30) + 'px'; item.dataset.y = -30; gameArea.appendChild(item); this.mgItems.push(item); }, 800);
+                if (!this.consumeEnergy(10)) return; 
+                document.getElementById('modal-title').innerText = "Гамак (Ловец!)";
+                document.getElementById('modal-body').innerHTML = `<div id="hammock-score" style="text-align:center;">Счет: 0 / 10</div><div id="hammock-game-area"><div id="hammock-player">🛶</div></div>`; 
+                document.getElementById('modal').classList.remove('hidden');
+                const gameArea = document.getElementById('hammock-game-area'); const player = document.getElementById('hammock-player'); 
+                this.mgScore = 0; this.mgActive = true; this.mgItems = [];
+                gameArea.ontouchmove = (e) => { e.preventDefault(); let x = e.touches[0].clientX - gameArea.getBoundingClientRect().left; player.style.left = x + 'px'; };
+                this.mgInterval = setInterval(() => {
+                    if(!this.mgActive) return;
+                    const item = document.createElement('div'); item.className = 'falling-item'; item.innerText = '🍬';
+                    item.style.left = Math.random() * 90 + '%'; item.dataset.y = 0; gameArea.appendChild(item); this.mgItems.push(item);
+                }, 800);
                 const loop = () => {
                     if(!this.mgActive) return;
-                    for (let i = this.mgItems.length - 1; i >= 0; i--) {
-                        let item = this.mgItems[i]; let y = parseFloat(item.dataset.y) + 3; item.dataset.y = y; item.style.top = y + 'px';
-                        const pR = player.getBoundingClientRect(); const iR = item.getBoundingClientRect();
-                        if (iR.bottom >= pR.top && iR.top <= pR.bottom && iR.right >= pR.left && iR.left <= pR.right) {
-                            if (item.innerText === '🍬') this.mgScore++; if (item.innerText === '🍎') { this.foods['apple']++; this.showFloatingText('+🍎'); }
-                            item.remove(); this.mgItems.splice(i, 1); document.getElementById('hammock-score').innerText = `Счет: ${this.mgScore} / 10`;
-                            if (this.mgScore >= 10) { this.mgActive = false; this.candies += 15; this.updateUI(); setTimeout(() => this.customAlert('Победа!', 'Отличный улов! +15 🍬'), 100); }
-                        } else if (y > gameArea.clientHeight) { item.remove(); this.mgItems.splice(i, 1); }
-                    }
-                    if(this.mgActive) this.animationFrame = requestAnimationFrame(loop);
+                    this.mgItems.forEach((item, i) => {
+                        let y = parseFloat(item.dataset.y) + 3; item.dataset.y = y; item.style.top = y + 'px';
+                        if(y > 220 && Math.abs(parseFloat(item.style.left) - parseFloat(player.style.left)) < 20) {
+                            this.mgScore++; item.remove(); this.mgItems.splice(i, 1);
+                            document.getElementById('hammock-score').innerText = `Счет: ${this.mgScore} / 10`;
+                            if(this.mgScore >= 10) { this.mgActive = false; this.candies += 15; this.updateUI(); this.customAlert('Победа!', '+15 🍬'); }
+                        }
+                    });
+                    requestAnimationFrame(loop);
                 }; loop();
             },
 
             openPoolMG() {
-                if(!this.consumeEnergy(10)) return; document.getElementById('modal-title').innerText = "Прыжок в бассейн (-10 ⚡)";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; font-size:50px; margin-bottom:10px;">${this.pet}</div><div style="text-align:center; color:#666; margin-bottom:10px;">Выбери точку для прыжка!</div><div style="position:relative; width:100%; height:150px; background:#4dd0e1; border-radius:20px; border:3px solid #00acc1; overflow:hidden;"><div class="pool-spot" style="top:30%; left:20%;" onclick="game.poolJump(0)">💦</div><div class="pool-spot" style="top:60%; left:50%;" onclick="game.poolJump(1)">💦</div><div class="pool-spot" style="top:40%; left:80%;" onclick="game.poolJump(2)">💦</div></div>`; document.getElementById('modal').classList.remove('hidden');
+                if(!this.consumeEnergy(10)) return; 
+                document.getElementById('modal-title').innerText = "Прыжок в бассейн";
+                document.getElementById('modal-body').innerHTML = `<div style="display:flex; justify-content:space-around; background:#4dd0e1; padding:20px; border-radius:20px;"><div onclick="game.poolJump()">💦</div><div onclick="game.poolJump()">💦</div><div onclick="game.poolJump()">💦</div></div>`; 
+                document.getElementById('modal').classList.remove('hidden');
             },
-            poolJump(spotIndex) {
-                const rewards = [ { t: 'Ого, на дне лежали конфеты! +15 🍬', action: () => { this.candies += 15; } }, { t: 'Ты выловил Энергетик! 🥫', action: () => { this.foods['drink'] = (this.foods['drink']||0) + 1; } }, { t: 'Просто веселый плюх! 💦', action: () => {} } ];
-                const r = rewards[Math.floor(Math.random() * rewards.length)]; r.action(); this.updateUI(); this.customAlert('Плюх!', r.t);
-            },
+            poolJump() { this.candies += 10; this.updateUI(); this.customAlert('Плюх!', '+10 🍬'); },
 
             openStoveMG() {
-                if(!this.consumeEnergy(10)) return; document.getElementById('modal-title').innerText = "Готовка пирога (-10 ⚡)";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; color:#666; margin-bottom:15px;">Нажми СТОП на зеленой зоне!</div><div id="stove-bar-container" style="width: 100%; height: 30px; background: #ddd; border-radius: 15px; position: relative; overflow: hidden; margin-bottom: 15px;"><div id="stove-green-zone" style="position: absolute; left: 40%; width: 20%; height: 100%; background: #4caf50;"></div><div id="stove-cursor" style="position: absolute; left: 0%; width: 5px; height: 100%; background: red; transition: left 0.1s linear;"></div></div><button class="mg-btn" onclick="game.stoveStop()">ОСТАНОВИТЬ ✋</button>`;
-                document.getElementById('modal').classList.remove('hidden'); this.mgCursorPos = 0; this.mgDirection = 1;
-                this.mgInterval = setInterval(() => { this.mgCursorPos += 3 * this.mgDirection; if(this.mgCursorPos >= 98) this.mgDirection = -1; if(this.mgCursorPos <= 0) this.mgDirection = 1; const c = document.getElementById('stove-cursor'); if(c) c.style.left = this.mgCursorPos + '%'; }, 30);
+                if(!this.consumeEnergy(10)) return; 
+                document.getElementById('modal-title').innerText = "Готовка пирога";
+                document.getElementById('modal-body').innerHTML = `<button class="mg-btn" onclick="game.stoveStop()">СТОП</button>`;
+                document.getElementById('modal').classList.remove('hidden');
+                this.mgTimeout = setTimeout(() => { this.foods['pie']++; this.updateUI(); this.customAlert('Готово!', 'Пирог 🥧 ваш!'); }, 2000);
             },
-            stoveStop() { this.clearMinigames(); if (this.mgCursorPos >= 40 && this.mgCursorPos <= 60) { this.foods['pie'] = (this.foods['pie'] || 0) + 1; this.updateUI(); this.customAlert('Шеф-повар!', 'Идеально! Вкусный Пирог 🥧 добавлен в Миску.'); } else { this.customAlert('Упс...', 'Блюдо сгорело! ⬛ Попробуй в следующий раз.'); } },
+            stoveStop() { clearTimeout(this.mgTimeout); this.customAlert('Остановлено', 'Ничего не вышло'); },
 
             openPCGame() {
-                document.getElementById('modal-title').innerText = "🕹️ Nyash-Catcher"; document.getElementById('modal-body').innerHTML = `<div style="text-align:center; margin-bottom:10px; font-weight:bold; color:#ff6b8b;">Лови конфетку!</div><div id="minigame-area" style="position:relative; width:100%; height:200px; background:#fff0f3; border-radius:15px; border:2px solid #ff8fa3;"><div id="mg-target" style="position:absolute; top:50%; left:50%; font-size:40px; transform:translate(-50%, -50%); cursor:pointer;" onclick="game.catchCandy()">🍬</div></div>`; document.getElementById('modal').classList.remove('hidden');
-                this.mgInterval = setInterval(() => { const t = document.getElementById('mg-target'); if(t) { t.style.top = Math.random()*80+10+'%'; t.style.left = Math.random()*80+10+'%'; } }, 700);
-            }, catchCandy() { this.candies++; this.updateUI(); },
-
-            clearMinigames() { if(this.mgInterval) clearInterval(this.mgInterval); if(this.mgTimeout) clearTimeout(this.mgTimeout); if(this.animationFrame) cancelAnimationFrame(this.animationFrame); this.mgActive = false; },
+                document.getElementById('modal-title').innerText = "Nyash-Catcher"; 
+                document.getElementById('modal-body').innerHTML = `<div id="mg-target" style="font-size:40px; text-align:center;" onclick="game.catchCandy()">🍬</div>`; 
+                document.getElementById('modal').classList.remove('hidden');
+            }, 
+            catchCandy() { this.candies++; this.updateUI(); this.showFloatingText('+1 🍬'); },
 
             openWardrobe() {
-                document.getElementById('modal-title').innerText = "Гардероб (Одежда)"; let html = '<div class="grid"><div class="card" onclick="game.equipCloth(\'\')"><div style="font-size:35px">❌</div><b>Снять всё</b></div>';
+                document.getElementById('modal-title').innerText = "Гардероб"; 
+                let html = '<div class="grid"><div class="card" onclick="game.equipCloth(\'\')">❌ Снять</div>';
                 for (let id in this.clothesData) {
-                    if (!this.clothesData[id].premium) {
-                        const item = this.clothesData[id]; const isOwned = this.unlockedClothes.includes(id); const isEq = this.currentCloth === id;
-                        html += `<div class="card ${isEq ? 'active' : ''}" onclick="game.interactCloth('${id}')"><div style="font-size:35px">${item.emoji}</div><b style="color:#ff6b8b">${item.name}</b><br><small>${isOwned ? (isEq ? 'Надето' : 'В шкафу') : item.price + ' 🍬'}</small></div>`;
-                    }
+                    const item = this.clothesData[id]; const isOwned = this.unlockedClothes.includes(id);
+                    html += `<div class="card" onclick="game.interactCloth('${id}')">${item.emoji}<br>${isOwned ? 'Надеть' : item.price + ' 🍬'}</div>`;
                 }
-                for (let id in this.clothesData) {
-                    if (this.clothesData[id].premium && this.unlockedClothes.includes(id)) {
-                        const item = this.clothesData[id]; const isEq = this.currentCloth === id;
-                        html += `<div class="card ${isEq ? 'active' : ''}" onclick="game.interactCloth('${id}')"><div style="font-size:35px">${item.emoji}</div><b style="color:#ff6b8b">${item.name}</b><br><small style="color:red; font-weight:bold;">Эксклюзив</small><br><small>${isEq ? 'Надето' : 'В шкафу'}</small></div>`;
+                html += '</div>'; document.getElementById('modal-body').innerHTML = html;
+                document.getElementById('modal').classList.remove('hidden');
+            },
+            equipCloth(id) { this.currentCloth = id; this.updateUI(); this.close(); },
+            interactCloth(id) {
+                if (this.unlockedClothes.includes(id)) this.equipCloth(id);
+                else { if(this.candies >= this.clothesData[id].price) { this.candies -= this.clothesData[id].price; this.unlockedClothes.push(id); this.updateUI(); this.openWardrobe(); } }
+            },
+
+            interactGarden() {
+                if (this.gardenState === 0) { if (this.consumeEnergy(5)) { this.gardenState = 1; this.updateUI(); this.renderFurniture(); } }
+                else if (this.gardenState === 1) { if (this.consumeEnergy(5)) { this.gardenState = 2; this.updateUI(); this.renderFurniture(); } }
+                else if (this.gardenState === 2) { this.gardenState = 0; this.candies += 15; this.updateUI(); this.renderFurniture(); }
+            },
+
+            openFridge() {
+                document.getElementById('modal-title').innerText = "Магазин еды";
+                document.getElementById('modal-body').innerHTML = `<div class="grid"><div class="card" onclick="game.buyFood('apple')">🍎 2🍬</div><div class="card" onclick="game.buyFood('cake')">🍰 12🍬</div></div>`; 
+                document.getElementById('modal').classList.remove('hidden');
+            },
+            buyFood(type) { 
+                const prices = { 'apple': 2, 'cake': 12 }; 
+                if (this.candies >= prices[type]) { this.candies -= prices[type]; this.foods[type]++; this.updateUI(); } 
+            },
+
+            openBowl() {
+                document.getElementById('modal-title').innerText = "Миска"; 
+                let html = '<div class="grid">';
+                for (let key in this.foods) { if (this.foods[key] > 0) html += `<div class="card" onclick="game.eatFood('${key}')">${key} (${this.foods[key]})</div>`; }
+                html += '</div>'; document.getElementById('modal-body').innerHTML = html;
+                document.getElementById('modal').classList.remove('hidden');
+            },
+            eatFood(type) { 
+                this.energy = Math.min(100, this.energy + 20); this.foods[type]--; this.updateUI(); this.openBowl(); 
+            },
+
+            openSettings() {
+                document.getElementById('modal-title').innerText = "Темы";
+                document.getElementById('modal-body').innerHTML = `<div class="grid"><div class="card" onclick="game.applyTheme('theme-pink')">Розовый</div><div class="card" onclick="game.applyTheme('theme-dark')">Темный</div></div>`; 
+                document.getElementById('modal').classList.remove('hidden');
+            },
+            applyTheme(t) {
+                this.theme = t; const body = document.body.style; const wall = document.querySelector('.wall').style; const floor = document.querySelector('.floor').style;
+                if (t === 'theme-pink') { body.background = "#ffeaef"; wall.background = "#ffc2d1"; floor.background = "#fb6f92"; }
+                else { body.background = "#0b0f19"; wall.background = "#141b2d"; floor.background = "#1f2940"; }
+                this.updateUI();
+            },
+
+            customAlert(title, text) {
+                document.getElementById('modal-title').innerText = title;
+                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; padding:20px;">${text}</div>`; 
+                document.getElementById('modal').classList.remove('hidden');
+            },
+
+            openDiary() {
+                document.getElementById('modal-title').innerText = "Дневник";
+                document.getElementById('modal-body').innerHTML = `<textarea id="diary-area" style="width:100%; height:100px;">${this.diary[this.currentDiaryDate]}</textarea><button class="mg-btn" onclick="game.saveNotes()">Сохранить</button>`; 
+                document.getElementById('modal').classList.remove('hidden');
+            },
+            saveNotes() { this.diary[this.currentDiaryDate] = document.getElementById('diary-area').value; this.updateUI(); this.close(); },
+
+            waterPlant() { this.plantLevel++; this.updateUI(); this.renderFurniture(); },
+
+            toggleSleep() {
+                if (this.isSleeping) { this.isSleeping = false; clearInterval(this.sleepInterval); this.updatePetVisual(); } 
+                else { this.isSleeping = true; this.updatePetVisual(); this.sleepInterval = setInterval(() => { this.energy = Math.min(100, this.energy + 5); this.updateUI(); }, 60000); }
+            },
+
+            startParty() {
+                this.clickPower = 3; setTimeout(() => this.clickPower = 1, 10000); this.customAlert("Party!", "x3 конфеты на 10 сек!");
+            },
+
+            showFloatingText(txt) {
+                const el = document.createElement('div'); el.innerText = txt; el.style.position = 'absolute'; el.style.left = '50%'; el.style.bottom = '30%'; el.style.color = 'white'; el.style.fontSize = '24px'; el.style.zIndex = '100'; el.style.transition = '1s';
+                document.body.appendChild(el); setTimeout(() => { el.style.transform = 'translateY(-50px)'; el.style.opacity = '0'; }, 10); setTimeout(() => el.remove(), 1000);
+            },
+
+            buy(id) { if (this.candies >= this.shopItems[id].price && !this.inventory.includes(id)) { this.candies -= this.shopItems[id].price; this.inventory.push(id); this.updateUI(); this.renderFurniture(); this.openShop(); } },
+            openShop() {
+                document.getElementById('modal-title').innerText = "Магазин"; let html = '<div class="grid">';
+                for (let id in this.shopItems) {
+                    if (this.shopItems[id].room === this.rooms[this.currentRoomIndex] && !this.shopItems[id].marketplace) {
+                        const isOwned = this.inventory.includes(id);
+                        html += `<div class="card" onclick="game.buy('${id}')">${this.shopItems[id].emoji}<br>${isOwned ? 'Куплено' : this.shopItems[id].price + ' 🍬'}</div>`;
                     }
                 }
                 html += '</div>'; document.getElementById('modal-body').innerHTML = html; document.getElementById('modal').classList.remove('hidden');
             },
-            equipCloth(id) { this.currentCloth = id; this.updateUI(); this.openWardrobe(); },
-            interactCloth(id) {
-                if (this.unlockedClothes.includes(id)) { this.equipCloth(id); } 
-                else { const item = this.clothesData[id]; if (this.candies >= item.price) { this.candies -= item.price; this.unlockedClothes.push(id); this.updateUI(); this.openWardrobe(); this.showFloatingText('Куплено! 👗'); } else { this.customAlert('Гардероб', 'Не хватает конфет! 🍬'); } }
-            },
-
-            interactGarden() {
-                if (this.gardenState === 0) { if (this.consumeEnergy(5)) { this.gardenState = 1; this.updateUI(); this.renderFurniture(); this.customAlert('Грядка', 'Ты посадил семена! 🌱 (-5 ⚡)'); } }
-                else if (this.gardenState === 1) { if (this.consumeEnergy(5)) { this.gardenState = 2; this.updateUI(); this.renderFurniture(); this.customAlert('Грядка', 'Ты полил грядку! 💧 (-5 ⚡)<br>Урожай созрел!'); } }
-                else if (this.gardenState === 2) { this.gardenState = 0; this.candies += 15; this.updateUI(); this.renderFurniture(); this.customAlert('Грядка', 'Урожай собран! 🌾 (+15 🍬)'); }
-            },
-
-            openFridge() {
-                document.getElementById('modal-title').innerText = "Супермаркет (Покупка)";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; margin-bottom:10px; color:#666;">Покупай продукты. Ешь из Миски 🥣.</div><div class="grid"><div class="card" onclick="game.buyFood('apple')"><div style="font-size:35px">🍎</div><b>Яблоко</b><br><small>2 🍬 (+15⚡)</small></div><div class="card" onclick="game.buyFood('drink')"><div style="font-size:35px">🥫</div><b>Энергетик</b><br><small>5 🍬 (+40⚡)</small></div><div class="card" onclick="game.buyFood('cake')" style="grid-column: span 2;"><div style="font-size:35px">🍰</div><b>Торт</b><br><small>12 🍬 (+100⚡)</small></div></div>`; document.getElementById('modal').classList.remove('hidden');
-            },
-            buyFood(type) { const prices = { 'apple': 2, 'drink': 5, 'cake': 12 }; if (this.candies >= prices[type]) { this.candies -= prices[type]; this.foods[type] = (this.foods[type] || 0) + 1; this.updateUI(); this.showFloatingText('Куплено! 🛒'); } else { this.customAlert('Ошибка', 'Не хватает конфет! 🍬'); } },
-
-            openBowl() {
-                document.getElementById('modal-title').innerText = "Миска (Инвентарь еды)"; let html = `<div style="text-align:center; margin-bottom:15px; font-weight:bold; color:#ff6b8b;">Энергия: ${this.energy}/100 ⚡ ${this.energy > 100 ? '(ПЕРЕГРУЗКА!)' : ''}</div><div class="grid">`;
-                const foodData = { 'apple': { emoji: '🍎', name: 'Яблоко', restore: '+15 ⚡' }, 'berry': { emoji: '🫐', name: 'Ягоды', restore: '+20 ⚡' }, 'drink': { emoji: '🥫', name: 'Энергетик', restore: '+40 ⚡' }, 'cake': { emoji: '🍰', name: 'Торт', restore: '+100 ⚡' }, 'pie': { emoji: '🥧', name: 'Пирог', restore: '+50 ⚡' }, 'burger': { emoji: '🍔', name: 'Бургер', restore: '+120 ⚡' }, 'pizza': { emoji: '🍕', name: 'Пицца', restore: '200 ⚡ MAX' } };
-                let hasFood = false; for (let key in this.foods) { if (this.foods[key] > 0) { hasFood = true; html += `<div class="card" onclick="game.eatFood('${key}')"><div style="font-size:35px">${foodData[key].emoji}</div><b>${foodData[key].name}</b><br><small>В наличии: ${this.foods[key]} шт.</small><br><small style="color:#4caf50;">${foodData[key].restore}</small></div>`; } }
-                if (!hasFood) html += `<div style="grid-column:span 2; text-align:center;">Тут пусто! Купи еду или приготовь на плите.</div>`; html += `</div>`; document.getElementById('modal-body').innerHTML = html; document.getElementById('modal').classList.remove('hidden');
-            },
-            eatFood(type) { 
-                if (type === 'pizza') {
-                    this.energy = 200;
-                } else {
-                    if (this.energy >= 100) { this.customAlert('Миска', 'Энергия уже полная (100⚡)! Больше влезет только Пицца 🍕.'); return; }
-                    const restores = { 'apple': 15, 'drink': 40, 'cake': 100, 'pie': 50, 'burger': 120, 'berry': 20 }; 
-                    this.energy += restores[type];
-                    if (this.energy > 100) this.energy = 100;
-                }
-                this.foods[type]--; this.updateUI(); this.showFloatingText('+⚡'); this.openBowl(); 
-            },
-
-            openSettings() {
-                if (this.isSleeping) { this.showFloatingText('Zzz...'); return; } document.getElementById('modal-title').innerText = "Настройки (Темы)";
-                document.getElementById('modal-body').innerHTML = `<div class="grid"><div class="card" onclick="game.applyTheme('theme-pink')" style="background:#ffeaef; border-color:#ff8fa3;">Розовый 🌸</div><div class="card" onclick="game.applyTheme('theme-dark')" style="background:#0b0f19; color:white; border-color:#334155;">Ночь 🌙</div><div class="card" onclick="game.applyTheme('theme-neon')" style="background:#000; color:#39ff14; border-color:#39ff14;">Неон ⚡</div><div class="card" onclick="game.applyTheme('theme-ocean')" style="background:#e0f7fa; color:#006064; border-color:#26c6da;">Океан 🌊</div><div class="card" onclick="game.applyTheme('theme-forest')" style="background:#e8f5e9; color:#1b5e20; border-color:#4caf50;">Лес 🌲</div><div class="card" onclick="game.applyTheme('theme-gold')" style="background:#fff8e1; color:#f57f17; border-color:#ffb300;">Золото ✨</div></div>`; document.getElementById('modal').classList.remove('hidden');
-            },
-            applyTheme(t) {
-                this.theme = t; const body = document.body.style; const wall = document.querySelector('.wall').style; const floor = document.querySelector('.floor').style; wall.boxShadow = "none";
-                if (this.currentRoomIndex === 1 && !this.currentExcursion) {
-                    if(t === 'theme-pink') { body.background = "#ffeaef"; wall.background = "#ffc2d1"; floor.background = "#fb6f92"; floor.borderTop = "4px solid rgba(0,0,0,0.05)"; }
-                    else if(t === 'theme-dark') { body.background = "#0b0f19"; wall.background = "#141b2d"; floor.background = "#1f2940"; floor.borderTop = "4px solid #0b0f19"; }
-                    else if(t === 'theme-neon') { body.background = "#000000"; wall.background = "#050505"; floor.background = "#0a0a0a"; floor.borderTop = "4px solid #39ff14"; wall.boxShadow = "inset 0 -15px 30px rgba(57, 255, 20, 0.15)"; }
-                    else if(t === 'theme-ocean') { body.background = "#e0f7fa"; wall.background = "#b2ebf2"; floor.background = "#4dd0e1"; floor.borderTop = "4px solid rgba(0,0,0,0.05)"; }
-                    else if(t === 'theme-forest') { body.background = "#e8f5e9"; wall.background = "#c8e6c9"; floor.background = "#81c784"; floor.borderTop = "4px solid #4caf50"; }
-                    else if(t === 'theme-gold') { body.background = "#fff8e1"; wall.background = "#ffecb3"; floor.background = "#ffd54f"; floor.borderTop = "4px solid #ffca28"; }
-                } this.updateUI();
-            },
-
-            customAlert(title, text) {
-                this.clearMinigames(); this.closePhoneStyles(); document.getElementById('modal-title').innerText = title;
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; font-size:18px; padding:20px; color:#333; font-weight:bold;">${text}</div><button class="card active" style="width:100%; margin-top:10px; border:none;" onclick="game.close()">Понятно 💖</button>`; document.getElementById('modal').classList.remove('hidden');
-            },
-
-            openDiary() {
-                document.getElementById('modal-title').innerText = "Мой Дневник"; let dateSelect = `<select onchange="game.changeDiaryDate(this.value)" style="width:100%; margin-bottom:10px; padding:10px; border-radius:10px; border:2px solid #ff8fa3; font-weight:bold; outline:none; color:#ff6b8b;">`;
-                Object.keys(this.diary).forEach(date => { dateSelect += `<option value="${date}" ${date === this.currentDiaryDate ? 'selected' : ''}>${date}</option>`; }); dateSelect += `</select>`;
-                document.getElementById('modal-body').innerHTML = `${dateSelect}<textarea id="diary-area" style="width:100%; height:150px; border-radius:15px; padding:10px; border:2px solid #ff8fa3; font-family:inherit; resize:none; font-size:16px;">${this.diary[this.currentDiaryDate]}</textarea><button class="card active" style="width:100%; margin-top:10px; border:none;" onclick="game.saveNotes()">Сохранить 💾</button>`; document.getElementById('modal').classList.remove('hidden');
-            },
-            changeDiaryDate(date) { this.diary[this.currentDiaryDate] = document.getElementById('diary-area').value; this.currentDiaryDate = date; this.openDiary(); },
-            saveNotes() { this.diary[this.currentDiaryDate] = document.getElementById('diary-area').value; this.updateUI(); this.close(); this.showFloatingText('Сохранено! 📝'); },
-
-            waterPlant() { if (this.plantLevel >= 5) { this.customAlert("🪴 Цветок", "🌳 Дерево выросло до максимума!"); return; } this.plantLevel++; this.updateUI(); this.renderFurniture(); this.showFloatingText(`Уровень ${this.plantLevel}/5 💧`); },
-
-            toggleSleep() {
-                if (this.isSleeping) { this.isSleeping = false; clearInterval(this.sleepInterval); this.updatePetVisual(); this.customAlert('Пробуждение ☀️', 'Питомец проснулся!'); } 
-                else { this.isSleeping = true; this.updatePetVisual(); this.customAlert('Сон 🛏️', 'Питомец уснул... (+5 ⚡ и +1 🍬 / мин)'); this.sleepInterval = setInterval(() => { this.candies += 1; this.energy = Math.min(100, this.energy + 5); this.updateUI(); this.showFloatingText('+1 🍬 | +5 ⚡'); }, 60000); }
-            },
-
-            startParty() {
-                if (this.partyActive) return; this.partyActive = true; this.clickPower = 3; this.close(); this.showFloatingText('CANDY PARTY! x3 🍬');
-                const body = document.body.style; const wall = document.querySelector('.wall').style; const floor = document.querySelector('.floor').style; const colors = ['#ff007f', '#00ff00', '#00d4ff', '#ffea00', '#9d00ff', '#ff3300'];
-                let partyInterval = setInterval(() => { let randomColor = colors[Math.floor(Math.random() * colors.length)]; body.background = randomColor; wall.background = randomColor; floor.background = randomColor; }, 300);
-                setTimeout(() => { clearInterval(partyInterval); this.partyActive = false; this.clickPower = 1; this.updateRoomUI(); this.customAlert("🎉 Party!", "Candy Party окончена! Остываем... 😮‍💨"); }, 10000);
-            },
-
-            showFloatingText(txt) {
-                const el = document.createElement('div'); el.innerText = txt; el.style.position = 'absolute'; el.style.left = '50%'; el.style.bottom = '30%'; el.style.color = 'white'; el.style.textShadow = '0px 2px 4px rgba(0,0,0,0.5)'; el.style.fontWeight = 'bold'; el.style.fontSize = '24px'; el.style.transition = '1s'; el.style.zIndex = '100'; el.style.pointerEvents = 'none'; el.style.transform = 'translateX(-50%)';
-                document.body.appendChild(el); setTimeout(() => { el.style.transform = 'translate(-50%, -50px)'; el.style.opacity = '0'; }, 10); setTimeout(() => el.remove(), 1000);
-            },
-
-            buy(id) { const item = this.shopItems[id]; if (this.candies >= item.price && !this.inventory.includes(id)) { this.candies -= item.price; this.inventory.push(id); this.updateUI(); this.renderFurniture(); this.openShop(); } },
-
-            openShop() {
-                if (this.isSleeping) { this.showFloatingText('Zzz...'); return; }
-                if (this.currentExcursion) { this.customAlert('Магазин 🛒', 'Питомец сейчас на улице! Вернитесь домой, чтобы открыть магазин.'); return; }
-                document.getElementById('modal-title').innerText = `Магазин (${this.roomNames[this.currentRoomIndex]})`; 
-                let html = '<div class="grid">'; 
-                const currentRoomName = this.rooms[this.currentRoomIndex]; 
-                let hasItems = false;
-                
-                for (let id in this.shopItems) {
-                    if (this.shopItems[id].room === currentRoomName && !this.shopItems[id].marketplace) {
-                        hasItems = true; const isOwned = this.inventory.includes(id);
-                        html += `<div class="card ${isOwned ? 'active' : ''}" onclick="game.buy('${id}')"><div style="font-size:40px">${this.shopItems[id].emoji}</div><b style="color:#ff6b8b">${this.shopItems[id].name}</b><br><small>${isOwned ? 'Куплено' : this.shopItems[id].price + ' 🍬'}</small></div>`;
-                    }
-                }
-                if (!hasItems) html += `<div style="grid-column: span 2; text-align:center;">Пусто!</div>`; html += '</div>'; 
-                document.getElementById('modal-body').innerHTML = html; document.getElementById('modal').classList.remove('hidden');
-            },
 
             openPets() {
-                if (this.isSleeping) { this.showFloatingText('Zzz...'); return; } document.getElementById('modal-title').innerText = "Питомцы"; let html = '<div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 8px;">';
-                this.petList.forEach(p => { html += `<div class="card ${this.pet === p ? 'active' : ''}" onclick="game.setPet('${p}')" style="font-size:35px; padding:10px;">${p}</div>`; });
+                document.getElementById('modal-title').innerText = "Питомцы"; let html = '<div class="grid">';
+                this.petList.forEach(p => { html += `<div class="card" onclick="game.setPet('${p}')">${p}</div>`; });
                 html += '</div>'; document.getElementById('modal-body').innerHTML = html; document.getElementById('modal').classList.remove('hidden');
             },
 
             setPet(emoji) { this.pet = emoji; this.updateUI(); this.close(); },
-            close() { this.clearMinigames(); this.closePhoneStyles(); document.getElementById('modal').classList.add('hidden'); },
+            close() { 
+                if(this.mgInterval) clearInterval(this.mgInterval); 
+                if(this.mgTimeout) clearTimeout(this.mgTimeout);
+                document.getElementById('modal').classList.add('hidden'); 
+            },
             closeBg(e) { if (e.target.id === 'modal') this.close(); }
         };
 
