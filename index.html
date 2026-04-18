@@ -564,32 +564,70 @@
             tipBot(botName) { if (this.candies >= 5) { this.candies -= 5; this.updateUI(); this.showFloatingText('-5 🍬'); this.customAlert('Отправлено!', `${botName} говорит тебе большое спасибо! ❤️`); } else { this.customAlert('Ой', 'У тебя нет столько конфет! 🍬'); } },
 
             // ИНТЕРАКТИВ: Телескоп
-            useTelescope() {
-                if(!this.consumeEnergy(5)) return;
-                const events = [
-                    { t: 'Ты увидел падающую звезду! 🌠 +15 🍬', action: () => { this.candies += 15; } },
-                    { t: 'В объектив попала пролетающая тарелка! 🛸 Питомец в шоке.', action: () => { this.showFloatingText('👽?!'); } },
-                    { t: 'Сегодня полнолуние. 🌕 Энергия восстановилась на 10.', action: () => { this.energy = Math.min(100, this.energy + 10); } },
-                    { t: 'Просто красивое ночное небо. ✨', action: () => {} }
-                ];
-                const ev = events[Math.floor(Math.random() * events.length)];
-                ev.action(); this.updateUI();
-                this.customAlert('Телескоп 🔭', ev.t);
+                    playTelescope() {
+                if(this.energy < 10) return this.customAlert("Усталость 🥱', 'Мало энергии! Отправь питомца спать 🛏️ или покорми.");
+                this.energy -= 10;
+                this.updateUI();
+
+                document.getElementById('modal-title').innerText = "Звездопад 🌠";
+                document.getElementById('modal-body').innerHTML = `
+                    <p style="text-align:center;">Успей нажать на звезду!</p>
+                    <div id="star-game"></div>
+                `;
+                document.getElementById('modal').classList.remove('hidden');
+
+                const container = document.getElementById('star-game');
+                
+                setTimeout(() => {
+                    if(document.getElementById('modal').classList.contains('hidden')) return;
+                    
+                    const star = document.createElement('div');
+                    star.className = 'falling-star';
+                    star.innerText = '⭐';
+                    star.style.left = Math.random() * 80 + 10 + '%';
+                    
+                    star.onclick = () => {
+                        this.candies += 30;
+                        this.updateUI();
+                        star.remove();
+                        this.customAlert("Успех!", "Звезда поймана! +30 🍬");
+                    };
+                    
+                    container.appendChild(star);
+                    
+                    setTimeout(() => {
+                        if(star.parentNode) {
+                            star.remove();
+                            this.customAlert("Упс...", "Звезда улетела!");
+                        }
+                    }, 1200);
+                }, 500);
             },
 
-            // ИНТЕРАКТИВ: Батут
-            useTrampoline() {
-                if(!this.consumeEnergy(10)) return;
+            startJump() {
+                if(this.energy < 15) return this.customAlert("Усталость 🥱', 'Мало энергии! Отправь питомца спать 🛏️ или покорми.");
+                
+                this.energy -= 15;
+                this.updateUI();
+                this.close();
+
+                const pet = document.getElementById('pet-container');
+                const blocker = document.getElementById('blocker');
+                
+                pet.classList.add('pet-jumping');
+                blocker.style.display = 'block'; // Блокировка экрана на время прыжков
+                
                 let jumps = 0;
-                this.customAlert('Батут 🤸', 'Юхууу! Прыгаем! Нажми ОК, чтобы начать серию прыжков.');
-                const jumpInterval = setInterval(() => {
+                const interval = setInterval(() => {
                     jumps++;
-                    this.showFloatingText('ПРЫЖОК! ☁️');
-                    if(jumps >= 3) {
-                        clearInterval(jumpInterval);
-                        this.candies += 20;
+                    this.showFloatingText("ЮХУ! 🤸");
+                    if(jumps >= 4) {
+                        clearInterval(interval);
+                        pet.classList.remove('pet-jumping');
+                        blocker.style.display = 'none'; // Снимаем блокировку
+                        this.candies += 25;
                         this.updateUI();
-                        this.showFloatingText('+20 🍬');
+                        this.customAlert("Отлично!", "Разминка окончена! +25 🍬");
                     }
                 }, 600);
             },
@@ -606,18 +644,28 @@
             },
 
             // ИНТЕРАКТИВ: Кофемашина
-            useCoffeeMachine() {
-                if(this.energy >= 100) { this.customAlert('Кофе ☕', 'Ты и так на бодряке! ⚡'); return; }
-                if(!this.consumeEnergy(5)) return;
-                document.getElementById('modal-title').innerText = "Кофемашина ☕";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; padding:10px;"><b>Готовим ароматный кофе...</b><br><div style="font-size:50px; margin:10px;">⏳</div></div>`;
-                document.getElementById('modal').classList.remove('hidden');
+            makeCoffee() {
+                if(this.energy >= 100) return this.customAlert("Бодрость", "Энергия и так на максимуме! ⚡");
                 
-                setTimeout(() => {
-                    this.energy = Math.min(100, this.energy + 25);
-                    this.updateUI();
-                    this.customAlert('Кофе готов! ☕', 'Ммм... Бодрость получена! (+25 ⚡)');
-                }, 2000);
+                document.getElementById('modal-title').innerText = "Варка кофе ☕";
+                document.getElementById('modal-body').innerHTML = `
+                    <div style="text-align:center; font-weight:bold;">Ожидайте...</div>
+                    <div id="coffee-progress"><div id="coffee-fill"></div></div>
+                `;
+                document.getElementById('modal').classList.remove('hidden');
+
+                const fill = document.getElementById('coffee-fill');
+                let progress = 0;
+                const int = setInterval(() => {
+                    progress += 4;
+                    fill.style.width = progress + '%';
+                    if(progress >= 100) {
+                        clearInterval(int);
+                        this.energy = Math.min(100, this.energy + 40);
+                        this.updateUI();
+                        setTimeout(() => this.customAlert("Готово!", "Кофе восстановил +40 ⚡"), 200);
+                    }
+                }, 100);
             },
 
             useOracle() { if(!this.consumeEnergy(5)) return; const p = ["Скоро ты найдешь много конфет... 🍬", "Берегись сгоревших пирогов на кухне! 🔥", "Твой питомец мечтает о костюме космонавта 👨‍🚀", "Пицца - самая сильная еда в игре! 🍕"]; this.customAlert('Оракул 🔮', p[Math.floor(Math.random() * p.length)]); },
