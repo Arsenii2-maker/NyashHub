@@ -592,7 +592,8 @@
             useTrampoline() {
                 if(!this.consumeEnergy(15)) return;
                 this.close();
-                const petWrapper = document.getElementById('pet-wrapper-id');
+                <div class="pet-wrapper">
+<div class="pet-wrapper" id="pet-wrapper-id">
                 const blocker = document.getElementById('blocker');
                 petWrapper.classList.add('pet-jumping');
                 blocker.style.display = 'block'; 
@@ -818,25 +819,6 @@
             close() { this.clearMinigames(); this.closePhoneStyles(); document.getElementById('modal').classList.add('hidden'); },
             closeBg(e) { if (e.target.id === 'modal') this.close(); }
         };
-        /* Для телескопа */
-.falling-star {
-    position: absolute;
-    top: -50px;
-    font-size: 30px;
-    transition: top 1.2s linear;
-    cursor: pointer;
-    z-index: 110;
-}
-
-/* Для кофеварки */
-#coffee-progress { width: 100%; height: 20px; background: #eee; border-radius: 10px; margin-top: 15px; overflow: hidden; }
-#coffee-fill { width: 0%; height: 100%; background: #6f4e37; transition: width 0.1s; }
-
-/* Блокировщик интерфейса (для батута) */
-#blocker {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 999; display: none; background: rgba(0,0,0,0);
-}
 
 
         window.addEventListener('DOMContentLoaded', () => { game.init(); });
