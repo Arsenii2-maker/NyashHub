@@ -240,10 +240,10 @@
                 'stove': { room: 'kitchen', name: 'Плита', price: 35, emoji: '♨️', top: '48%', left: '70%', action: () => game.openStoveMG() },
                 'bowl': { room: 'kitchen', name: 'Миска', price: 15, emoji: '🥣', top: '75%', left: '25%', action: () => game.openBowl() },
 
-                'telescope': { room: 'yard', name: 'Звезды', price: 60, emoji: '🔭', top: '30%', left: '50%', marketplace: true, action: () => game.useTelescope() },
+                'telescope': { room: 'yard', name: 'Звезды', price: 60, emoji: '🔭', top: '25%', left: '75%', marketplace: true, action: () => game.useTelescope() },
                 'trampoline': { room: 'yard', name: 'Батут', price: 80, emoji: '🤸', top: '75%', left: '50%', marketplace: true, action: () => game.useTrampoline() },
                 'blender': { room: 'kitchen', name: 'Блендер', price: 40, emoji: '🥤', top: '48%', left: '40%', marketplace: true, action: () => game.useBlender() },
-                'coffeemachine': { room: 'kitchen', name: 'Кофе', price: 50, emoji: '☕', top: '65%', left: '55%', marketplace: true, action: () => game.useCoffeeMachine() }
+                'coffeemachine': { room: 'kitchen', name: 'Кофе', price: 50, emoji: '☕', top: '55%', left: '80%', marketplace: true, action: () => game.useCoffeeMachine() }
             },
 
             petList: ['🤖', '🐱', '🐶', '🐹', '🐰', '🦊', '🦄', '🐲', '👽', '👻'],
@@ -574,62 +574,90 @@
             },
             tipBot(botName) { if (this.candies >= 5) { this.candies -= 5; this.updateUI(); this.showFloatingText('-5 🍬'); this.customAlert('Отправлено!', `${botName} говорит тебе большое спасибо! ❤️`); } else { this.customAlert('Ой', 'У тебя нет столько конфет! 🍬'); } },
 
-            /* ФУНКЦИИ ТЕХНОЛОГИЙ MARKETPLACE */
-            useTelescope() {
-                if(!this.consumeEnergy(10)) return;
-                document.getElementById('modal-title').innerText = "Звездопад 🌠";
-                document.getElementById('modal-body').innerHTML = `<p style="text-align:center;">Успей нажать на звезду!</p><div id="star-game" style="height:250px; position:relative;"></div>`;
-                document.getElementById('modal').classList.remove('hidden');
-                const container = document.getElementById('star-game');
-                this.mgTimeout = setTimeout(() => {
-                    const star = document.createElement('div'); star.className = 'falling-star'; star.innerText = '⭐'; star.style.left = Math.random() * 80 + 10 + '%';
-                    star.onclick = () => { this.candies += 30; this.updateUI(); star.remove(); this.customAlert("Успех!", "Звезда поймана! +30 🍬"); };
-                    container.appendChild(star); setTimeout(() => { star.style.top = '250px'; }, 10);
-                    this.mgTimeout = setTimeout(() => { if(star.parentNode) { star.remove(); this.customAlert("Упс...", "Звезда улетела!"); } }, 1200);
-                }, 500);
-            },
+          // Использование телескопа (проверка списания энергии)
+useTelescope() {
+    if(!this.consumeEnergy(20)) return; // Увеличил стоимость до 20
+    document.getElementById('modal-title').innerText = "Звездопад 🌠";
+    document.getElementById('modal-body').innerHTML = `<p style="text-align:center;">Успей нажать на звезду!</p><div id="star-game" style="height:250px; position:relative;"></div>`;
+    document.getElementById('modal').classList.remove('hidden');
+    const container = document.getElementById('star-game');
+    
+    this.mgTimeout = setTimeout(() => {
+        const star = document.createElement('div'); 
+        star.className = 'falling-star'; 
+        star.innerText = '⭐'; 
+        star.style.left = Math.random() * 80 + 10 + '%';
+        star.onclick = () => { 
+            this.candies += 35; 
+            this.updateUI(); 
+            star.remove(); 
+            this.customAlert("Успех!", "Звезда поймана! +35 🍬"); 
+        };
+        container.appendChild(star); 
+        setTimeout(() => { star.style.top = '250px'; }, 10);
+        this.mgTimeout = setTimeout(() => { if(star.parentNode) star.remove(); }, 1200);
+    }, 500);
+},
 
-            useTrampoline() {
-    if(!this.consumeEnergy(15)) return;
+
+            // Переделанный батут (тратит много энергии -> дает конфеты)
+useTrampoline() {
+    if(!this.consumeEnergy(40)) return; // Тратит много энергии
     this.close();
     
-    // Находим элемент обертки питомца
     const petWrapper = document.querySelector('.pet-wrapper');
     const blocker = document.getElementById('blocker');
     
     if (petWrapper) {
         petWrapper.classList.add('pet-jumping');
-        blocker.style.display = 'block'; 
+        if(blocker) blocker.style.display = 'block'; 
         
         let jumps = 0;
         this.mgInterval = setInterval(() => {
             jumps++; 
-            this.showFloatingText("ЮХУ! 🤸");
+            this.showFloatingText("ВЫСОКО! 🤸");
             
-            if(jumps >= 4) {
+            if(jumps >= 5) {
                 clearInterval(this.mgInterval); 
                 petWrapper.classList.remove('pet-jumping'); 
-                blocker.style.display = 'none';
-                this.candies += 25; 
+                if(blocker) blocker.style.display = 'none';
+                
+                let reward = 45; // Награда в конфетах
+                this.candies += reward; 
                 this.updateUI(); 
-                this.customAlert("Отлично!", "Разминка окончена! +25 🍬");
+                this.customAlert("Тренировка!", `Ты отлично попрыгал! Получено +${reward} 🍬`);
             }
-        }, 600); // Прыжок каждые 0.6 сек
+        }, 600);
     }
 },
 
 
-            useCoffeeMachine() {
-                if(this.energy >= 100) return this.customAlert("Бодрость", "Энергия и так на максимуме!");
-                document.getElementById('modal-title').innerText = "Варка кофе ☕";
-                document.getElementById('modal-body').innerHTML = `<div style="text-align:center; font-weight:bold;">Ожидайте...</div><div id="coffee-progress"><div id="coffee-fill"></div></div>`;
-                document.getElementById('modal').classList.remove('hidden');
-                const fill = document.getElementById('coffee-fill'); let progress = 0;
-                this.mgInterval = setInterval(() => {
-                    progress += 4; if(fill) fill.style.width = progress + '%';
-                    if(progress >= 100) { clearInterval(this.mgInterval); this.energy = Math.min(100, this.energy + 40); this.updateUI(); setTimeout(() => this.customAlert("Готово!", "Кофе восстановил +40 ⚡"), 200); }
-                }, 100);
-            },
+
+            // Переделанная кофеварка (теперь за конфеты)
+useCoffeeMachine() {
+    if(this.energy >= 100) return this.customAlert("Бодрость", "Энергия и так на максимуме!");
+    if(this.candies < 15) return this.customAlert("Нет конфет", "Чашка кофе стоит 15 🍬!");
+    
+    this.candies -= 15;
+    this.updateUI();
+    
+    document.getElementById('modal-title').innerText = "Варка кофе ☕ (-15🍬)";
+    document.getElementById('modal-body').innerHTML = `<div style="text-align:center; font-weight:bold;">Варим крепкий эспрессо...</div><div id="coffee-progress"><div id="coffee-fill"></div></div>`;
+    document.getElementById('modal').classList.remove('hidden');
+    
+    const fill = document.getElementById('coffee-fill'); 
+    let progress = 0;
+    this.mgInterval = setInterval(() => {
+        progress += 5; 
+        if(fill) fill.style.width = progress + '%';
+        if(progress >= 100) { 
+            clearInterval(this.mgInterval); 
+            this.energy = Math.min(100, this.energy + 30); 
+            this.updateUI(); 
+            setTimeout(() => this.customAlert("Готово!", "Кофе восстановил +30 ⚡"), 200); 
+        }
+    }, 100);
+},
             useOracle() { if(!this.consumeEnergy(5)) return; const p = ["Скоро ты найдешь много конфет... 🍬", "Берегись сгоревших пирогов на кухне! 🔥", "Твой питомец мечтает о костюме космонавта 👨‍🚀", "Пицца - самая сильная еда в игре! 🍕"]; this.customAlert('Оракул 🔮', p[Math.floor(Math.random() * p.length)]); },
             openMusicPlayer() {
                 document.getElementById('modal-title').innerText = "Магнитофон 📻";
