@@ -590,22 +590,34 @@
             },
 
             useTrampoline() {
-                if(!this.consumeEnergy(15)) return;
-                this.close();
-                <div class="pet-wrapper">
-<div class="pet-wrapper" id="pet-wrapper-id">
-                const blocker = document.getElementById('blocker');
-                petWrapper.classList.add('pet-jumping');
-                blocker.style.display = 'block'; 
-                let jumps = 0;
-                this.mgInterval = setInterval(() => {
-                    jumps++; this.showFloatingText("ЮХУ! 🤸");
-                    if(jumps >= 4) {
-                        clearInterval(this.mgInterval); petWrapper.classList.remove('pet-jumping'); blocker.style.display = 'none';
-                        this.candies += 25; this.updateUI(); this.customAlert("Отлично!", "Разминка окончена! +25 🍬");
-                    }
-                }, 600);
-            },
+    if(!this.consumeEnergy(15)) return;
+    this.close();
+    
+    // Находим элемент обертки питомца
+    const petWrapper = document.querySelector('.pet-wrapper');
+    const blocker = document.getElementById('blocker');
+    
+    if (petWrapper) {
+        petWrapper.classList.add('pet-jumping');
+        blocker.style.display = 'block'; 
+        
+        let jumps = 0;
+        this.mgInterval = setInterval(() => {
+            jumps++; 
+            this.showFloatingText("ЮХУ! 🤸");
+            
+            if(jumps >= 4) {
+                clearInterval(this.mgInterval); 
+                petWrapper.classList.remove('pet-jumping'); 
+                blocker.style.display = 'none';
+                this.candies += 25; 
+                this.updateUI(); 
+                this.customAlert("Отлично!", "Разминка окончена! +25 🍬");
+            }
+        }, 600); // Прыжок каждые 0.6 сек
+    }
+},
+
 
             useCoffeeMachine() {
                 if(this.energy >= 100) return this.customAlert("Бодрость", "Энергия и так на максимуме!");
